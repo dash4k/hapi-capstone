@@ -1,0 +1,76 @@
+const autoBind = require("auto-bind");
+const { default: axios } = require("axios");
+
+class DiagnosticsHandler {
+    constructor(diagnosticsService, sensorsService, machinesService) {
+        this._diagnosticsService = diagnosticsService;
+        this._sensorsService = sensorsService;
+        this._machinesService = machinesService;
+
+        autoBind(this);
+    }
+
+    async postDiagnosticHandler(request, h) {
+        const { machineId } = request.params;
+
+        const sensor = await this._sensorsService.getLatestSensorData(machineId);
+        const machine = await this._machinesService.getMachine(machineId);
+
+        console.log("Sensor Payload Sent to FastAPI:", sensor);
+
+        const payload = {
+            machine_id: sensor.machine_id,
+            air_temperature: sensor.air_temp,
+            process_temperature: sensor.process_temp,
+            rotational_speed: sensor.rotational_speed,
+            torque: sensor.torque,
+            tool_wear: sensor.tool_wear,
+            type: machine.type
+        };
+
+        const response = await axios.post(
+            `${process.env.FASTAPIPROTOCOL}://${process.env.FASTAPIHOST}:${process.env.FASTAPIPORT}/api/predict`,
+            payload,
+            { timeout: 10000 }
+        );
+
+        const diagnostics = response.data;
+
+        console.log("TYPES:", {
+            failure_prediction: typeof diagnostics.failure_prediction,
+            failure_type_probabilities: typeof diagnostics.failure_type_probabilities,
+            feature_contributions: typeof diagnostics.feature_contributions,
+        });
+
+        console.log("RAW feature_contributions:", diagnostics.feature_contributions);
+
+
+        const diagnosticsId = await this._diagnosticsService.addDiagnostic(diagnostics);
+
+        return h
+            .response({
+                status: 'success',
+                message: 'Diagnostics added successfully',
+                data: { diagnosticsId },
+            })
+            .code(201);
+    }
+
+    async getDiagnosticHandler(request, h) {
+        const { machineId } = request.params;
+        const { limit } = request.query;
+
+        const diagnostics = await this._diagnosticsService.getDiagnostics(machineId, limit);
+
+        return h
+            .response({
+                status: 'success',
+                data: {
+                    diagnostics,
+                },
+            })
+            .code(200);
+    }
+}
+
+module.exports = DiagnosticsHandler;
