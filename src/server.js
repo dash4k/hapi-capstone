@@ -4,13 +4,13 @@ const Jwt = require('@hapi/jwt');
 const Inert = require('@hapi/inert');
 const Vision = require('@hapi/vision');
 const HapiSwagger = require('hapi-swagger');
-const swaggerOptions = require('./config/swagger');
 
 // exceptions
 const ClientError = require('./exceptions/ClientError');
 
 // utils
 const TokenManager = require('./tokenize/TokenManager');
+const swaggerOptions = require('./config/swagger');
 
 // Machines
 const machines = require('./api/machines');
@@ -53,6 +53,7 @@ const init = async () => {
         },
     });
 
+    // Register Swagger and authentication plugins
     await server.register([
         {
             plugin: Jwt,
@@ -85,6 +86,7 @@ const init = async () => {
         }),
     });
 
+    // Register API plugins
     await server.register([
         {
             plugin: machines,
@@ -144,6 +146,7 @@ const init = async () => {
 
     await server.start();
     console.log(`Server is running at ${server.info.uri}`);
+    console.log(`Swagger documentation available at ${server.info.uri}/documentation`);
 }
 
 init();
