@@ -19,3 +19,4 @@ joblib
 # Utilities
 python-dotenv
 pydantic
+shap
