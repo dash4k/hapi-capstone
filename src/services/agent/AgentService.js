@@ -1,3 +1,5 @@
+const { GoogleGenAI } = require('@google/genai');
+
 class AgentService {
   constructor(diagnosticsService, sensorsService, machinesService) {
     this.diagnosticsService = diagnosticsService;
@@ -8,15 +10,13 @@ class AgentService {
     // Try to initialize Google Gemini
     this.geminiAvailable = false;
     try {
-      // Check if @google/generative-ai is available
-      const { GoogleGenerativeAI } = require('@google/generative-ai');
       if (process.env.GEMINI_API_KEY) {
-        this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        this.genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         this.geminiAvailable = true;
         console.log('✅ Google Gemini AI initialized');
       }
     } catch (error) {
-      console.log('ℹ️ Google Gemini not available, using rule-based responses');
+      console.log('⚠️ Google Gemini initialization failed:', error.message);
     }
   }
 
@@ -36,7 +36,10 @@ class AgentService {
     if (highRisk.length > 0) {
       context += `High Risk Machines:\n`;
       highRisk.slice(0, 5).forEach((d) => {
-        context += `- ${d.machine_id}: Risk ${(d.risk_score * 100).toFixed(0)}%, Issue: ${d.predicted_failure || 'Unknown'}\n`;
+        const failureType = d.most_likely_failure && d.most_likely_failure !== 'No Failure' 
+          ? d.most_likely_failure 
+          : 'Unknown';
+        context += `- ${d.machine_id}: Risk ${(d.risk_score * 100).toFixed(0)}%, Issue: ${failureType}, Action: ${d.recommended_action}\n`;
       });
     }
 
@@ -200,10 +203,11 @@ ${systemContext}`;
         fullPrompt += `User: ${message}\n\nAssistant:`;
 
         // Get response from Gemini
-        const model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
-        const result = await model.generateContent(fullPrompt);
-        const response = await result.response;
-        const answer = response.text();
+        const response = await this.genAI.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: fullPrompt,
+        });
+        const answer = response.text;
 
         // Save to session
         session.messages.push({ role: 'user', content: message });
@@ -217,16 +221,16 @@ ${systemContext}`;
         return {
           answer,
           sources: ['Google Gemini AI'],
+          using_ai: true,
         };
       } catch (error) {
         console.error('Gemini error:', error.message);
-        // Fallback to simple mode on error
-        return this.simpleChat(message);
+        throw new Error('AI service unavailable. Please check GEMINI_API_KEY configuration.');
       }
     }
 
-    // Simple fallback mode
-    return this.simpleChat(message);
+    // No Gemini available
+    throw new Error('AI service not configured. Please set GEMINI_API_KEY in .env file.');
   }
 
   /**
@@ -249,6 +253,7 @@ ${systemContext}`;
       if (highRisk.length === 0) {
         return {
           answer: 'Good news! No machines are currently at high risk. All systems operating normally.',
+          using_ai: false,
         };
       }
 
@@ -259,7 +264,7 @@ ${systemContext}`;
         answer += `  Action: ${d.recommended_action}\n\n`;
       });
 
-      return { answer };
+      return { answer, using_ai: false };
     }
 
     // Machine-specific query
@@ -268,7 +273,7 @@ ${systemContext}`;
       if (match) {
         const machineId = match[0].toUpperCase().replace(/\s+/g, '_');
         const answer = await this.getMachineDetail(machineId);
-        return { answer };
+        return { answer, using_ai: false };
       }
     }
 
@@ -280,7 +285,7 @@ ${systemContext}`;
       messageLower.includes('how many')
     ) {
       const answer = await this.getOverview();
-      return { answer };
+      return { answer, using_ai: false };
     }
 
     // Recommendations
@@ -292,7 +297,7 @@ ${systemContext}`;
       messageLower.includes('action')
     ) {
       const answer = await this.getRecommendations();
-      return { answer };
+      return { answer, using_ai: false };
     }
 
     // Default help response
@@ -304,6 +309,7 @@ ${systemContext}`;
 • "What maintenance should we prioritize?" - Get recommendations
 
 What would you like to know?`,
+      using_ai: false,
     };
   }
 
