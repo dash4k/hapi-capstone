@@ -5,7 +5,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node ./src/server.js",
-    "migrate": "node-pg-migrate"
+    "migrate": "node-pg-migrate",
+    "fastapi:setup": "python -m venv venv && venv\\Scripts\\pip install -r requirements.txt",
+    "fastapi:start": "venv\\Scripts\\python fastapi_main.py"
   },
   "keywords": [],
   "author": "",
