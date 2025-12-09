@@ -1,3 +1,5 @@
+const Joi = require('joi');
+
 const routes = (handler) => [
     {
         method: 'POST',
@@ -7,6 +9,32 @@ const routes = (handler) => [
             tags: ['api', 'users'],
             description: 'Register a new user',
             notes: 'Creates a new user account',
+            validate: {
+                payload: Joi.object({
+                    username: Joi.string().required().description('Username').example('johndoe'),
+                    password: Joi.string().min(6).required().description('Password (minimum 6 characters)').example('password123'),
+                    fullname: Joi.string().required().description('Full name').example('John Doe'),
+                }),
+            },
+            plugins: {
+                'hapi-swagger': {
+                    responses: {
+                        201: {
+                            description: 'User registered successfully',
+                            schema: Joi.object({
+                                status: Joi.string().example('success'),
+                                message: Joi.string().example('User added successfully'),
+                                data: Joi.object({
+                                    userId: Joi.string().example('user-1234567890'),
+                                }),
+                            }),
+                        },
+                        400: {
+                            description: 'Bad request - validation error or username already exists',
+                        },
+                    },
+                },
+            },
         },
     },
     {
@@ -17,6 +45,33 @@ const routes = (handler) => [
             tags: ['api', 'users'],
             description: 'Get user by ID',
             notes: 'Returns user information by ID',
+            validate: {
+                params: Joi.object({
+                    id: Joi.string().required().description('User ID').example('user-1234567890'),
+                }),
+            },
+            plugins: {
+                'hapi-swagger': {
+                    responses: {
+                        200: {
+                            description: 'User retrieved successfully',
+                            schema: Joi.object({
+                                status: Joi.string().example('success'),
+                                data: Joi.object({
+                                    user: Joi.object({
+                                        id: Joi.string().example('user-1234567890'),
+                                        username: Joi.string().example('johndoe'),
+                                        fullname: Joi.string().example('John Doe'),
+                                    }),
+                                }),
+                            }),
+                        },
+                        404: {
+                            description: 'User not found',
+                        },
+                    },
+                },
+            },
         },
     },
 ];
