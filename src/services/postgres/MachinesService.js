@@ -43,6 +43,16 @@ class MachinesService {
 
         return result.rows;
     }
+
+    // Alias for agent service
+    async getMachines() {
+        return this.listAllMachines();
+    }
+
+    // Alias for agent service
+    async getMachineById(id) {
+        return this.getMachine(id);
+    }
 }
 
 module.exports = MachinesService;

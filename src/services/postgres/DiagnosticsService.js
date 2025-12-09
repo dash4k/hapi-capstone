@@ -81,6 +81,46 @@ class DiagnosticsService {
 
         return result.rows;
     }
+
+    async getLatestDiagnostics() {
+        // Get the latest diagnostic for each machine
+        const result = await this._pool.query({
+            text: `
+                SELECT DISTINCT ON (machine_id) 
+                    id,
+                    machine_id,
+                    timestamp,
+                    risk_score,
+                    failure_prediction,
+                    failure_type_probabilities,
+                    most_likely_failure,
+                    recommended_action,
+                    feature_contributions
+                FROM diagnostics
+                ORDER BY machine_id, timestamp DESC
+            `,
+        });
+
+        return result.rows;
+    }
+
+    async getLatestDiagnosticByMachine(machineId) {
+        const result = await this._pool.query({
+            text: `
+                SELECT * FROM diagnostics 
+                WHERE machine_id = $1 
+                ORDER BY timestamp DESC 
+                LIMIT 1
+            `,
+            values: [machineId],
+        });
+
+        if (!result.rows.length) {
+            return null;
+        }
+
+        return result.rows[0];
+    }
 }
 
 module.exports = DiagnosticsService;

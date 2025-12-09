@@ -20,12 +20,12 @@ class DiagnosticsHandler {
 
         const payload = {
             machine_id: sensor.machine_id,
-            air_temperature: sensor.air_temp,
-            process_temperature: sensor.process_temp,
-            rotational_speed: sensor.rotational_speed,
-            torque: sensor.torque,
-            tool_wear: sensor.tool_wear,
-            type: machine.type
+            Type: machine.type,
+            "Air temperature": sensor.air_temp,
+            "Process temperature": sensor.process_temp,
+            "Rotational speed": sensor.rotational_speed,
+            "Torque": sensor.torque,
+            "Tool wear": sensor.tool_wear
         };
 
         const response = await axios.post(
@@ -34,7 +34,10 @@ class DiagnosticsHandler {
             { timeout: 10000 }
         );
 
-        const diagnostics = response.data;
+        const diagnostics = {
+            ...response.data,
+            timestamp: new Date().toISOString()
+        };
 
         console.log("TYPES:", {
             failure_prediction: typeof diagnostics.failure_prediction,
@@ -61,6 +64,19 @@ class DiagnosticsHandler {
         const { limit } = request.query;
 
         const diagnostics = await this._diagnosticsService.getDiagnostics(machineId, limit);
+
+        return h
+            .response({
+                status: 'success',
+                data: {
+                    diagnostics,
+                },
+            })
+            .code(200);
+    }
+
+    async getLatestDiagnosticsHandler(request, h) {
+        const diagnostics = await this._diagnosticsService.getLatestDiagnostics();
 
         return h
             .response({
