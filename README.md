@@ -40,8 +40,8 @@ The system consists of two main components:
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
-cd predictive-maintenance-system
+git clone https://github.com/dash4k/hapi-capstone.git
+cd hapi-capstone/
 ```
 
 ### 2. Database Setup
@@ -319,7 +319,7 @@ npm run migrate down
 The project uses ESLint with Google style guide:
 
 ```bash
-npm run lint
+npx eslint . --fix
 ```
 
 ## 🔧 Troubleshooting
