@@ -1,0 +1,23 @@
+Air temperature
+Process temperature
+Rotational speed
+Torque
+Tool wear
+Temp_Diff
+Temp_Ratio
+Power
+Overstrain
+Temp_Risk
+Speed_Risk
+HDF_Risk
+Power_Low
+Power_High
+PWF_Risk
+Tool_Wear_Ratio
+TWF_Risk
+OSF_Risk_Ratio
+OSF_Risk
+Speed_Torque_Ratio
+Torque_Wear_Interaction
+Combined_Risk_Score
+Type_encoded

@@ -1,0 +1,22 @@
+# Predictive Maintenance Copilot - Backend Dependencies
+# =====================================================
+# FastAPI Service Dependencies
+
+# Web Framework
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Data Processing
+pandas
+numpy
+
+# ML Models
+xgboost
+scikit-learn
+joblib
+
+# Utilities
+python-dotenv
+pydantic
+shap

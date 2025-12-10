@@ -35,6 +35,10 @@ const swaggerOptions = {
             name: 'diagnostics',
             description: 'Diagnostic endpoints - Run predictive analysis and retrieve diagnostic history',
         },
+        {
+            name: 'agent',
+            description: 'AI Agent endpoints - Chat with maintenance assistant, get recommendations, and system overview',
+        },
     ],
     securityDefinitions: {
         jwt: {

@@ -5,13 +5,16 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node ./src/server.js",
-    "migrate": "node-pg-migrate"
+    "migrate": "node-pg-migrate",
+    "fastapi:setup": "python -m venv venv && venv\\Scripts\\pip install -r requirements.txt",
+    "fastapi:start": "venv\\Scripts\\python fastapi_main.py"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@google/genai": "^1.32.0",
     "@hapi/hapi": "^21.4.4",
     "@hapi/inert": "^7.1.0",
     "@hapi/jwt": "^3.2.1",

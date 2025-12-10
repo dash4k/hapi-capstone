@@ -1,0 +1,72 @@
+{
+  "binary_model": {
+    "type": "XGBoost",
+    "target": "Machine failure",
+    "metrics": {
+      "recall": 0.9558823529411765,
+      "precision": 0.3051643192488263,
+      "f1": 0.4626334519572954,
+      "roc_auc": 0.9817546583850932
+    },
+    "best_params": {
+      "max_depth": 3,
+      "learning_rate": 0.011864747313242795,
+      "n_estimators": 174,
+      "subsample": 0.8275270799472583,
+      "colsample_bytree": 0.9674256661966076,
+      "min_child_weight": 5,
+      "reg_alpha": 2.2038789911767867e-05,
+      "reg_lambda": 0.0006237145318564812
+    }
+  },
+  "multiclass_model": {
+    "type": "XGBoost",
+    "target": "Failure Type",
+    "classes": [
+      "No Failure",
+      "TWF",
+      "HDF",
+      "PWF",
+      "OSF",
+      "RNF"
+    ],
+    "metrics": {
+      "accuracy": 0.9605,
+      "macro_f1": 0.19602040816326533,
+      "weighted_f1": 0.9477586734693878
+    }
+  },
+  "feature_columns": [
+    "Air temperature",
+    "Process temperature",
+    "Rotational speed",
+    "Torque",
+    "Tool wear",
+    "Temp_Diff",
+    "Temp_Ratio",
+    "Power",
+    "Overstrain",
+    "Temp_Risk",
+    "Speed_Risk",
+    "HDF_Risk",
+    "Power_Low",
+    "Power_High",
+    "PWF_Risk",
+    "Tool_Wear_Ratio",
+    "TWF_Risk",
+    "OSF_Risk_Ratio",
+    "OSF_Risk",
+    "Speed_Torque_Ratio",
+    "Torque_Wear_Interaction",
+    "Combined_Risk_Score",
+    "Type_encoded"
+  ],
+  "original_feature_names": {
+    "air_temp": "Air temperature",
+    "process_temp": "Process temperature",
+    "rotational_speed": "Rotational speed",
+    "torque": "Torque",
+    "tool_wear": "Tool wear"
+  },
+  "feature_engineering_required": true
+}

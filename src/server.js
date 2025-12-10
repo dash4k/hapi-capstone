@@ -26,6 +26,10 @@ const SensorValidator = require('./validator/sensors/index');
 const diagnostics = require('./api/diagnostics');
 const DiagnosticsService = require('./services/postgres/DiagnosticsService');
 
+// Agent (AI Maintenance Assistant)
+const agent = require('./api/agent');
+const AgentService = require('./services/agent/AgentService');
+
 // Authentications
 const authentications = require('./api/authentications');
 const AuthenticationsService = require('./services/postgres/AuthenticationsService');
@@ -42,6 +46,16 @@ const init = async () => {
     const diagnosticsService = new DiagnosticsService();
     const authenticationsService = new AuthenticationsService();
     const usersService = new UsersService();
+    
+    const agentService = new AgentService(
+        diagnosticsService,
+        sensorsService,
+        machinesService
+    );
+    
+    setInterval(() => {
+        agentService.cleanupSessions(30);
+    }, 5 * 60 * 1000);
 
     const server = Hapi.server({
         port: process.env.PORT,
@@ -124,6 +138,12 @@ const init = async () => {
             options: {
                 service: usersService,
                 validator: UserValidator,
+            },
+        },
+        {
+            plugin: agent,
+            options: {
+                agentService,
             },
         },
     ]);

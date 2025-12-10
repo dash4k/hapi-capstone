@@ -101,6 +101,51 @@ const routes = (handler) => [
             },
         },
     },
+    {
+        method: 'GET',
+        path: '/diagnostics',
+        handler: handler.getLatestDiagnosticsHandler,
+        options: {
+            tags: ['api', 'diagnostics'],
+            description: 'Get latest diagnostics for all machines',
+            notes: 'Returns the most recent diagnostic for each machine in the system',
+            plugins: {
+                'hapi-swagger': {
+                    responses: {
+                        200: {
+                            description: 'Latest diagnostics retrieved successfully',
+                            schema: Joi.object({
+                                status: Joi.string().example('success'),
+                                data: Joi.object({
+                                    diagnostics: Joi.array().items(
+                                        Joi.object({
+                                            id: Joi.number().example(1),
+                                            machine_id: Joi.string().example('machine-001'),
+                                            timestamp: Joi.string().example('2024-01-01T00:00:00.000Z'),
+                                            risk_score: Joi.number().example(0.15),
+                                            failure_prediction: Joi.object({
+                                                will_fail: Joi.boolean().example(false),
+                                                confidence: Joi.number().example(0.85),
+                                            }),
+                                            failure_type_probabilities: Joi.object({
+                                                TWF: Joi.number().example(0.05),
+                                                HDF: Joi.number().example(0.03),
+                                                PWF: Joi.number().example(0.04),
+                                                OSF: Joi.number().example(0.02),
+                                                RNF: Joi.number().example(0.01),
+                                            }),
+                                            most_likely_failure: Joi.string().allow(null).example('TWF'),
+                                            recommended_action: Joi.string().example('Monitor tool wear closely'),
+                                        })
+                                    ),
+                                }),
+                            }),
+                        },
+                    },
+                },
+            },
+        },
+    },
 ];
 
 module.exports = routes;
