@@ -73,6 +73,17 @@ class UsersService {
 
         return id;
     }
+
+    async verifyUserExist(id) {
+        const result = await this._pool.query({
+            text: 'SELECT id FROM users where id = $1',
+            values: [id],
+        });
+
+        if (!result.rows.length) {
+            throw new NotFoundError('User not found');
+        }
+    }
 }
 
 module.exports = UsersService;

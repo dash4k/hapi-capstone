@@ -12,7 +12,15 @@ class MachinesService {
         const time = new Date().toISOString();
         
         const result = await this._pool.query({
-            text: 'INSERT INTO machines VALUES($1, $2, $3, $4) RETURNING id',
+            text: `
+                INSERT INTO machines VALUES($1, $2, $3, $4) 
+                ON CONFLICT (id) 
+                DO UPDATE SET 
+                    type = EXCLUDED.type,
+                    location = EXCLUDED.location,
+                    created_at = EXCLUDED.created_at
+                RETURNING id
+            `,
             values: [id, type, location, time],
         });
 
