@@ -35,6 +35,47 @@ const routes = (handler) => [
     },
   },
   {
+    method: 'GET',
+    path: '/api/agent/history/{sessionId}',
+    handler: handler.getHistoryHandler,
+    options: {
+      tags: ['api', 'agent'],
+      description: 'Get chat history for a session',
+      notes: 'Retrieves all messages in a conversation session',
+      validate: {
+        params: Joi.object({
+          sessionId: Joi.string().required().description('Session ID').example('session-123'),
+        }),
+        query: Joi.object({
+          limit: Joi.number().integer().min(1).max(100).optional().default(50).description('Maximum number of messages to return').example(20),
+        }),
+      },
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            200: {
+              description: 'Chat history retrieved successfully',
+              schema: Joi.object({
+                status: Joi.string().example('success'),
+                data: Joi.object({
+                  session_id: Joi.string().example('session-123'),
+                  messages: Joi.array().items(
+                    Joi.object({
+                      id: Joi.number().example(1),
+                      role: Joi.string().example('user'),
+                      message: Joi.string().example('What machines need attention?'),
+                      timestamp: Joi.string().example('2025-12-12T10:30:00Z'),
+                    })
+                  ),
+                }),
+              }),
+            },
+          },
+        },
+      },
+    },
+  },
+  {
     method: 'DELETE',
     path: '/api/agent/session/{sessionId}',
     handler: handler.deleteSessionHandler,

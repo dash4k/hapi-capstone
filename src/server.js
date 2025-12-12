@@ -26,6 +26,9 @@ const SensorValidator = require('./validator/sensors/index');
 const diagnostics = require('./api/diagnostics');
 const DiagnosticsService = require('./services/postgres/DiagnosticsService');
 
+// Chat History
+const ChatHistoryService = require('./services/postgres/ChatHistoryService');
+
 // Agent (AI Maintenance Assistant)
 const agent = require('./api/agent');
 const AgentService = require('./services/agent/AgentService');
@@ -45,18 +48,28 @@ const init = async () => {
     const machinesService = new MachinesService();
     const sensorsService = new SensorsService();
     const diagnosticsService = new DiagnosticsService();
+    const chatHistoryService = new ChatHistoryService();
     const authenticationsService = new AuthenticationsService();
     const usersService = new UsersService();
     
     const agentService = new AgentService(
         diagnosticsService,
         sensorsService,
-        machinesService
+        machinesService,
+        chatHistoryService
     );
     
-    setInterval(() => {
-        agentService.cleanupSessions(30);
-    }, 5 * 60 * 1000);
+    // Clean up old chat messages periodically (older than 30 days)
+    setInterval(async () => {
+        try {
+            const deletedCount = await chatHistoryService.cleanupOldMessages(30);
+            if (deletedCount > 0) {
+                console.log(`Cleaned up ${deletedCount} old chat messages`);
+            }
+        } catch (error) {
+            console.error('Error cleaning up chat history:', error.message);
+        }
+    }, 24 * 60 * 60 * 1000); // Run daily
 
     const server = Hapi.server({
         port: process.env.PORT,

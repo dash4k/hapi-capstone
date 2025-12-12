@@ -1,11 +1,12 @@
 const { GoogleGenAI } = require('@google/genai');
 
 class AgentService {
-  constructor(diagnosticsService, sensorsService, machinesService) {
+  constructor(diagnosticsService, sensorsService, machinesService, chatHistoryService) {
     this.diagnosticsService = diagnosticsService;
     this.sensorsService = sensorsService;
     this.machinesService = machinesService;
-    this.sessions = new Map();
+    this.chatHistoryService = chatHistoryService;
+    this.sessions = new Map(); // Keep for temporary session state if needed
 
     // Try to initialize Google Gemini
     this.geminiAvailable = false;
@@ -81,16 +82,8 @@ class AgentService {
     // Use Google Gemini if available
     if (this.genAI && this.geminiAvailable) {
       try {
-        // Get or create session
-        if (!this.sessions.has(sessionId)) {
-          this.sessions.set(sessionId, {
-            messages: [],
-            lastActivity: new Date(),
-          });
-        }
-
-        const session = this.sessions.get(sessionId);
-        session.lastActivity = new Date();
+        // Load chat history from database
+        const history = await this.chatHistoryService.getSessionHistory(sessionId, 20); // Last 20 messages
 
         // Build context-aware prompt
         const systemContext = await this.getSystemContext();
@@ -120,10 +113,10 @@ ${systemContext}`;
         // Build full prompt with history
         let fullPrompt = systemPrompt + '\n\n';
 
-        if (session.messages.length > 0) {
+        if (history.length > 0) {
           fullPrompt += 'Previous conversation:\n';
-          session.messages.slice(-6).forEach((msg) => {
-            fullPrompt += `${msg.role}: ${msg.content}\n`;
+          history.slice(-10).forEach((msg) => { // Use last 10 messages for context
+            fullPrompt += `${msg.role}: ${msg.message}\n`;
           });
           fullPrompt += '\n';
         }
@@ -137,14 +130,9 @@ ${systemContext}`;
         });
         const answer = response.text;
 
-        // Save to session
-        session.messages.push({ role: 'user', content: message });
-        session.messages.push({ role: 'assistant', content: answer });
-
-        // Keep only last 10 messages
-        if (session.messages.length > 10) {
-          session.messages = session.messages.slice(-10);
-        }
+        // Save messages to database
+        await this.chatHistoryService.saveMessage(sessionId, 'user', message);
+        await this.chatHistoryService.saveMessage(sessionId, 'assistant', answer);
 
         return {
           answer,
@@ -162,23 +150,17 @@ ${systemContext}`;
   }
 
   /**
-   * Clear a chat session
+   * Get chat history for a session
    */
-  clearSession(sessionId) {
-    this.sessions.delete(sessionId);
+  async getHistory(sessionId, limit = 50) {
+    return await this.chatHistoryService.getSessionHistory(sessionId, limit);
   }
 
   /**
-   * Clean up old sessions (call periodically)
+   * Clear a chat session
    */
-  cleanupSessions(maxAgeMinutes = 30) {
-    const now = new Date();
-    this.sessions.forEach((session, sessionId) => {
-      const ageMinutes = (now.getTime() - session.lastActivity.getTime()) / (1000 * 60);
-      if (ageMinutes > maxAgeMinutes) {
-        this.sessions.delete(sessionId);
-      }
-    });
+  async clearSession(sessionId) {
+    return await this.chatHistoryService.deleteSession(sessionId);
   }
 }
 

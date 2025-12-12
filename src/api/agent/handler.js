@@ -31,13 +31,39 @@ class AgentHandler {
   }
 
   /**
+   * GET /api/agent/history/{sessionId}
+   * Get chat history for a session
+   */
+  async getHistoryHandler(request, h) {
+    const { sessionId } = request.params;
+    const { limit } = request.query;
+
+    const messages = await this._service.getHistory(sessionId, limit || 50);
+
+    return h.response({
+      status: 'success',
+      data: {
+        session_id: sessionId,
+        messages,
+      },
+    }).code(200);
+  }
+
+  /**
    * DELETE /api/agent/session/{sessionId}
    * Clear chat session
    */
   async deleteSessionHandler(request, h) {
     const { sessionId } = request.params;
 
-    this._service.clearSession(sessionId);
+    const deleted = await this._service.clearSession(sessionId);
+
+    if (!deleted) {
+      return h.response({
+        status: 'fail',
+        message: 'Session not found',
+      }).code(404);
+    }
 
     return h.response({
       status: 'success',
