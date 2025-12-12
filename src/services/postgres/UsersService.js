@@ -53,6 +53,17 @@ class UsersService {
         return result.rows[0];
     }
 
+    async deleteUserById(userId) {
+        const result = await this._pool.query({
+            text: 'DELETE FROM users WHERE id = $1 RETURNING id',
+            values: [userId],
+        });
+        if (!result.rows.length) {
+            throw new NotFoundError('User not found');
+        }
+        return;
+    }
+
     async verifyUserCredential({ username, password }) {
         const result = await this._pool.query({
             text: 'SELECT id, password FROM users WHERE username = $1',

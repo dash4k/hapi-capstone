@@ -74,6 +74,37 @@ const routes = (handler) => [
             },
         },
     },
+    {
+        method: 'DELETE',
+        path: '/users/{id}',
+        handler: handler.deleteUserByIdHandler,
+        options: {
+            tags: ['api', 'users'],
+            description: 'Delete user by ID',
+            notes: 'Deletes a specific user by their ID',
+            validate: {
+                params: Joi.object({
+                    id: Joi.string().required().description('User ID').example('user-1234567890'),
+                }),
+            },
+            plugins: {
+                'hapi-swagger': {
+                    responses: {
+                        200: {
+                            description: 'User deleted successfully',
+                            schema: Joi.object({
+                                status: Joi.string().example('success'),
+                                message: Joi.string().example('User deleted successfully'),
+                            }),
+                        },
+                        404: {
+                            description: 'User not found',
+                        },
+                    },
+                },
+            },
+        },
+    },
 ];
 
 module.exports = routes;

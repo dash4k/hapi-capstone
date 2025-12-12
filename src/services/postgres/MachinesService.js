@@ -25,7 +25,7 @@ class MachinesService {
 
     async getMachine(id) {
         const result = await this._pool.query({
-            text: 'SELECT * FROM machines WHERE Id = $1',
+            text: 'SELECT * FROM machines WHERE id = $1',
             values: [id],
         });
 
@@ -42,6 +42,17 @@ class MachinesService {
         });
 
         return result.rows;
+    }
+
+    async deleteMachine(id) {
+        const result = await this._pool.query({
+            text: 'DELETE FROM machines WHERE id = $1 RETURNING id',
+            values: [id],
+        });
+        if (!result.rows.length) {
+            throw new NotFoundError('Machine not found');
+        }
+        return;
     }
 
     // Alias for agent service
