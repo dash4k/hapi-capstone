@@ -44,6 +44,11 @@ const UsersService = require('./services/postgres/UsersService');
 const UserValidator = require('./validator/users/index');
 const AgentValidator = require('./validator/agent');
 
+// Notifications
+const notifications = require('./api/notifications');
+const NotificationsService = require('./services/postgres/NotificationsService');
+const NotificationValidator = require('./validator/notifications/index');
+
 const init = async () => {
     const machinesService = new MachinesService();
     const sensorsService = new SensorsService();
@@ -51,6 +56,7 @@ const init = async () => {
     const chatHistoryService = new ChatHistoryService();
     const authenticationsService = new AuthenticationsService();
     const usersService = new UsersService();
+    const notificationsService = new NotificationsService();
     
     const agentService = new AgentService(
         diagnosticsService,
@@ -159,6 +165,15 @@ const init = async () => {
             options: {
                 service: agentService,
                 validator: AgentValidator,
+            },
+        },
+        {
+            plugin: notifications,
+            options: {
+                notificationsService,
+                usersService,
+                machinesService,
+                validator: NotificationValidator,
             },
         },
     ]);
