@@ -39,6 +39,7 @@ const AuthenticationValidator = require('./validator/authentications/index');
 const users = require('./api/users');
 const UsersService = require('./services/postgres/UsersService');
 const UserValidator = require('./validator/users/index');
+const AgentValidator = require('./validator/agent');
 
 const init = async () => {
     const machinesService = new MachinesService();
@@ -143,7 +144,8 @@ const init = async () => {
         {
             plugin: agent,
             options: {
-                agentService,
+                service: agentService,
+                validator: AgentValidator,
             },
         },
     ]);

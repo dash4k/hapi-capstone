@@ -8,12 +8,12 @@ class MachinesService {
         this._pool = new Pool();
     }
 
-    async addMachine({ id, type, location }) {
+    async addMachine({ name, type, description }) {
         const time = new Date().toISOString();
         
         const result = await this._pool.query({
-            text: 'INSERT INTO machines VALUES($1, $2, $3, $4) RETURNING id',
-            values: [id, type, location, time],
+            text: 'INSERT INTO machines (name, type, description, created_at) VALUES($1, $2, $3, $4) RETURNING id',
+            values: [name, type, description, time],
         });
 
         if (!result.rows[0].id) {
@@ -42,6 +42,41 @@ class MachinesService {
         });
 
         return result.rows;
+    }
+
+    async updateMachine(id, updates) {
+        const fields = [];
+        const values = [];
+        let paramIndex = 1;
+
+        if (updates.name !== undefined) {
+            fields.push(`name = $${paramIndex++}`);
+            values.push(updates.name);
+        }
+        if (updates.type !== undefined) {
+            fields.push(`type = $${paramIndex++}`);
+            values.push(updates.type);
+        }
+        if (updates.description !== undefined) {
+            fields.push(`description = $${paramIndex++}`);
+            values.push(updates.description);
+        }
+
+        if (fields.length === 0) {
+            throw new InvariantError('No fields to update');
+        }
+
+        values.push(id);
+        const result = await this._pool.query({
+            text: `UPDATE machines SET ${fields.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
+            values,
+        });
+
+        if (!result.rows.length) {
+            throw new NotFoundError('Machine not found');
+        }
+
+        return result.rows[0];
     }
 
     async deleteMachine(id) {

@@ -2,9 +2,11 @@ const autoBind = require('auto-bind');
 const { nanoid } = require('nanoid');
 
 class AgentHandler {
-  constructor(agentService) {
-    this._agentService = agentService;
-    autoBind(this);
+  constructor(service, validator) {
+      this._service = service;
+      this._validator = validator;
+
+      autoBind(this);
   }
 
   /**
@@ -12,10 +14,11 @@ class AgentHandler {
    * Chat with AI maintenance assistant
    */
   async postChatHandler(request, h) {
+    this._validator.validateChatPayload(request.payload);
     const { message, session_id } = request.payload;
     const sessionId = session_id || nanoid(16);
 
-    const result = await this._agentService.chat(message, sessionId);
+    const result = await this._service.chat(message, sessionId);
 
     return h.response({
       status: 'success',
@@ -34,7 +37,7 @@ class AgentHandler {
   async deleteSessionHandler(request, h) {
     const { sessionId } = request.params;
 
-    this._agentService.clearSession(sessionId);
+    this._service.clearSession(sessionId);
 
     return h.response({
       status: 'success',

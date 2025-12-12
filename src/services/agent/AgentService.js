@@ -20,9 +20,6 @@ class AgentService {
     }
   }
 
-  /**
-   * Get context about the system state for Gemini
-   */
   async getSystemContext() {
     const machines = await this.machinesService.getMachines();
     const diagnostics = await this.diagnosticsService.getLatestDiagnostics();
@@ -46,9 +43,6 @@ class AgentService {
     return context;
   }
 
-  /**
-   * Get detailed machine information
-   */
   async getMachineDetail(machineId) {
     // Clean up machine ID
     machineId = machineId.trim().toUpperCase();
@@ -83,9 +77,6 @@ class AgentService {
     return result;
   }
 
-  /**
-   * Process a chat message and return response
-   */
   async chat(message, sessionId) {
     // Use Google Gemini if available
     if (this.genAI && this.geminiAvailable) {

@@ -19,9 +19,10 @@ const routes = (handler) => [
                                 data: Joi.object({
                                     machines: Joi.array().items(
                                         Joi.object({
-                                            id: Joi.string().example('machine-001'),
+                                            id: Joi.number().example(1),
+                                            name: Joi.string().example('CNC Machine A'),
                                             type: Joi.string().example('M'),
-                                            location: Joi.string().example('Factory Floor A'),
+                                            description: Joi.string().example('High-precision CNC machine'),
                                             created_at: Joi.string().example('2024-01-01T00:00:00.000Z'),
                                         })
                                     ),
@@ -43,7 +44,7 @@ const routes = (handler) => [
             notes: 'Returns a specific machine by its ID',
             validate: {
                 params: Joi.object({
-                    id: Joi.string().required().description('Machine ID').example('machine-001'),
+                    id: Joi.string().required().description('Machine ID').example('1'),
                 }),
             },
             plugins: {
@@ -55,9 +56,10 @@ const routes = (handler) => [
                                 status: Joi.string().example('success'),
                                 data: Joi.object({
                                     machine: Joi.object({
-                                        id: Joi.string().example('machine-001'),
+                                        id: Joi.number().example(1),
+                                        name: Joi.string().example('CNC Machine A'),
                                         type: Joi.string().example('M'),
-                                        location: Joi.string().example('Factory Floor A'),
+                                        description: Joi.string().example('High-precision CNC machine'),
                                         created_at: Joi.string().example('2024-01-01T00:00:00.000Z'),
                                     }),
                                 }),
@@ -81,9 +83,9 @@ const routes = (handler) => [
             notes: 'Creates a new machine in the system',
             validate: {
                 payload: Joi.object({
-                    id: Joi.string().required().description('Unique machine identifier').example('machine-001'),
+                    name: Joi.string().required().description('Machine name').example('CNC Machine A'),
                     type: Joi.string().required().description('Machine type (L, M, or H)').example('M'),
-                    location: Joi.string().required().description('Machine location').example('Factory Floor A'),
+                    description: Joi.string().optional().description('Machine description').example('High-precision CNC machine'),
                 }),
             },
             plugins: {
@@ -95,12 +97,56 @@ const routes = (handler) => [
                                 status: Joi.string().example('success'),
                                 message: Joi.string().example('Machine added successfully'),
                                 data: Joi.object({
-                                    machineId: Joi.string().example('machine-001'),
+                                    machineId: Joi.number().example(1),
                                 }),
                             }),
                         },
                         400: {
                             description: 'Bad request - validation error',
+                        },
+                    },
+                },
+            },
+        },
+    },
+    {
+        method: 'PUT',
+        path: '/machines/{id}',
+        handler: handler.updateMachineByIdHandler,
+        options: {
+            tags: ['api', 'machines'],
+            description: 'Update machine by ID',
+            notes: 'Updates a specific machine by its ID',
+            validate: {
+                params: Joi.object({
+                    id: Joi.string().required().description('Machine ID').example('1'),
+                }),
+                payload: Joi.object({
+                    name: Joi.string().optional().description('Machine name').example('CNC Machine A'),
+                    type: Joi.string().optional().description('Machine type (L, M, or H)').example('M'),
+                    description: Joi.string().optional().description('Machine description').example('High-precision CNC machine'),
+                }),
+            },
+            plugins: {
+                'hapi-swagger': {
+                    responses: {
+                        200: {
+                            description: 'Machine updated successfully',
+                            schema: Joi.object({
+                                status: Joi.string().example('success'),
+                                data: Joi.object({
+                                    machine: Joi.object({
+                                        id: Joi.number().example(1),
+                                        name: Joi.string().example('CNC Machine A'),
+                                        type: Joi.string().example('M'),
+                                        description: Joi.string().example('High-precision CNC machine'),
+                                        created_at: Joi.string().example('2024-01-01T00:00:00.000Z'),
+                                    }),
+                                }),
+                            }),
+                        },
+                        404: {
+                            description: 'Machine not found',
                         },
                     },
                 },
@@ -117,7 +163,7 @@ const routes = (handler) => [
             notes: 'Deletes a specific machine by its ID',
             validate: {
                 params: Joi.object({
-                    id: Joi.string().required().description('Machine ID').example('machine-001'),
+                    id: Joi.string().required().description('Machine ID').example('1'),
                 }),
             },
             plugins: {
