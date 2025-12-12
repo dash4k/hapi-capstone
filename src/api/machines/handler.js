@@ -50,21 +50,6 @@ class MachinesHandler {
             })
             .code(200);
     }
-
-    async updateMachineByIdHandler(request, h) {
-        this._validator.validatePutPayload(request.payload);
-        const { id } = request.params;
-        const machine = await this._service.updateMachine(id, request.payload);
-        return h
-            .response({
-                status: 'success',
-                message: 'Machine updated successfully',
-                data: {
-                    machine,
-                },
-            })
-            .code(200);
-    }
     
     async deleteMachineByIdHandler(request, h) {
         const { id } = request.params;

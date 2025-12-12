@@ -21,12 +21,8 @@ exports.up = (pgm) => {
             type: 'VARCHAR(100)',
             notNull: true,
         },
-        description: {
-            type: 'TEXT',
-            notNull: false,
-        },
-        created_at: {
-            type: 'TEXT',
+        timestamp: {
+            type: 'TIMESTAMPTZ',
             notNull: true,
         },
     });

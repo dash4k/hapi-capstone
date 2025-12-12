@@ -8,12 +8,12 @@ class MachinesService {
         this._pool = new Pool();
     }
 
-    async addMachine({ name, type, description }) {
+    async addMachine({ name, type }) {
         const time = new Date().toISOString();
         
         const result = await this._pool.query({
-            text: 'INSERT INTO machines (name, type, description, created_at) VALUES($1, $2, $3, $4) RETURNING id',
-            values: [name, type, description, time],
+            text: 'INSERT INTO machines (name, type, timestamp) VALUES($1, $2, $3) RETURNING id',
+            values: [name, type, time],
         });
 
         if (!result.rows[0].id) {
@@ -38,7 +38,7 @@ class MachinesService {
 
     async listAllMachines() {
         const result = await this._pool.query({
-            text: 'SELECT * FROM machines ORDER BY created_at DESC',
+            text: 'SELECT * FROM machines ORDER BY timestamp DESC',
         });
 
         return result.rows;
@@ -56,10 +56,6 @@ class MachinesService {
         if (updates.type !== undefined) {
             fields.push(`type = $${paramIndex++}`);
             values.push(updates.type);
-        }
-        if (updates.description !== undefined) {
-            fields.push(`description = $${paramIndex++}`);
-            values.push(updates.description);
         }
 
         if (fields.length === 0) {

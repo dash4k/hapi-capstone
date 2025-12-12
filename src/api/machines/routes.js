@@ -22,8 +22,7 @@ const routes = (handler) => [
                                             id: Joi.number().example(1),
                                             name: Joi.string().example('CNC Machine A'),
                                             type: Joi.string().example('M'),
-                                            description: Joi.string().example('High-precision CNC machine'),
-                                            created_at: Joi.string().example('2024-01-01T00:00:00.000Z'),
+                                            timestamp: Joi.string().example('2024-01-01T00:00:00.000Z'),
                                         })
                                     ),
                                 }),
@@ -59,8 +58,7 @@ const routes = (handler) => [
                                         id: Joi.number().example(1),
                                         name: Joi.string().example('CNC Machine A'),
                                         type: Joi.string().example('M'),
-                                        description: Joi.string().example('High-precision CNC machine'),
-                                        created_at: Joi.string().example('2024-01-01T00:00:00.000Z'),
+                                        timestamp: Joi.string().example('2024-01-01T00:00:00.000Z'),
                                     }),
                                 }),
                             }),
@@ -85,7 +83,6 @@ const routes = (handler) => [
                 payload: Joi.object({
                     name: Joi.string().required().description('Machine name').example('CNC Machine A'),
                     type: Joi.string().required().description('Machine type (L, M, or H)').example('M'),
-                    description: Joi.string().optional().description('Machine description').example('High-precision CNC machine'),
                 }),
             },
             plugins: {
@@ -103,50 +100,6 @@ const routes = (handler) => [
                         },
                         400: {
                             description: 'Bad request - validation error',
-                        },
-                    },
-                },
-            },
-        },
-    },
-    {
-        method: 'PUT',
-        path: '/machines/{id}',
-        handler: handler.updateMachineByIdHandler,
-        options: {
-            tags: ['api', 'machines'],
-            description: 'Update machine by ID',
-            notes: 'Updates a specific machine by its ID',
-            validate: {
-                params: Joi.object({
-                    id: Joi.string().required().description('Machine ID').example('1'),
-                }),
-                payload: Joi.object({
-                    name: Joi.string().optional().description('Machine name').example('CNC Machine A'),
-                    type: Joi.string().optional().description('Machine type (L, M, or H)').example('M'),
-                    description: Joi.string().optional().description('Machine description').example('High-precision CNC machine'),
-                }),
-            },
-            plugins: {
-                'hapi-swagger': {
-                    responses: {
-                        200: {
-                            description: 'Machine updated successfully',
-                            schema: Joi.object({
-                                status: Joi.string().example('success'),
-                                data: Joi.object({
-                                    machine: Joi.object({
-                                        id: Joi.number().example(1),
-                                        name: Joi.string().example('CNC Machine A'),
-                                        type: Joi.string().example('M'),
-                                        description: Joi.string().example('High-precision CNC machine'),
-                                        created_at: Joi.string().example('2024-01-01T00:00:00.000Z'),
-                                    }),
-                                }),
-                            }),
-                        },
-                        404: {
-                            description: 'Machine not found',
                         },
                     },
                 },
