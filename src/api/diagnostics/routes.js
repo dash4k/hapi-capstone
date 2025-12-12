@@ -11,7 +11,7 @@ const routes = (handler) => [
             notes: 'Runs diagnostic analysis on the latest sensor data for a machine',
             validate: {
                 params: Joi.object({
-                    machineId: Joi.string().required().description('Machine ID').example('machine-001'),
+                    machineId: Joi.number().required().description('Machine ID').example(1),
                 }),
             },
             plugins: {
@@ -64,7 +64,7 @@ const routes = (handler) => [
                                 data: Joi.object({
                                     latestDiagnosticData: Joi.object({
                                         id: Joi.number().example(1),
-                                        machine_id: Joi.string().example('machine-001'),
+                                        machine_id: Joi.number().example(1),
                                         timestamp: Joi.string().example('2024-01-01T00:00:00.000Z'),
                                         risk_score: Joi.number().example(0.15),
                                         failure_prediction: Joi.object({
@@ -109,7 +109,7 @@ const routes = (handler) => [
             notes: 'Returns diagnostic history for a specific machine',
             validate: {
                 params: Joi.object({
-                    machineId: Joi.string().required().description('Machine ID').example('machine-001'),
+                    machineId: Joi.number().required().description('Machine ID').example(1),
                 }),
                 query: Joi.object({
                     limit: Joi.number().integer().min(1).max(100).optional().description('Number of records to return').example(10),
@@ -181,7 +181,7 @@ const routes = (handler) => [
                                     diagnostics: Joi.array().items(
                                         Joi.object({
                                             id: Joi.number().example(1),
-                                            machine_id: Joi.string().example('machine-001'),
+                                            machine_id: Joi.number().example(1),
                                             timestamp: Joi.string().example('2024-01-01T00:00:00.000Z'),
                                             risk_score: Joi.number().example(0.15),
                                             failure_prediction: Joi.object({
