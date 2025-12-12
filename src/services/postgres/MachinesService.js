@@ -8,12 +8,12 @@ class MachinesService {
         this._pool = new Pool();
     }
 
-    async addMachine({ id, type, location }) {
+    async addMachine({ name, type }) {
         const time = new Date().toISOString();
         
         const result = await this._pool.query({
-            text: 'INSERT INTO machines VALUES($1, $2, $3, $4) RETURNING id',
-            values: [id, type, location, time],
+            text: 'INSERT INTO machines (name, type, timestamp) VALUES($1, $2, $3) RETURNING id',
+            values: [name, type, time],
         });
 
         if (!result.rows[0].id) {
@@ -25,7 +25,7 @@ class MachinesService {
 
     async getMachine(id) {
         const result = await this._pool.query({
-            text: 'SELECT * FROM machines WHERE Id = $1',
+            text: 'SELECT * FROM machines WHERE id = $1',
             values: [id],
         });
 
@@ -38,10 +38,52 @@ class MachinesService {
 
     async listAllMachines() {
         const result = await this._pool.query({
-            text: 'SELECT * FROM machines ORDER BY created_at DESC',
+            text: 'SELECT * FROM machines ORDER BY timestamp DESC',
         });
 
         return result.rows;
+    }
+
+    async updateMachine(id, updates) {
+        const fields = [];
+        const values = [];
+        let paramIndex = 1;
+
+        if (updates.name !== undefined) {
+            fields.push(`name = $${paramIndex++}`);
+            values.push(updates.name);
+        }
+        if (updates.type !== undefined) {
+            fields.push(`type = $${paramIndex++}`);
+            values.push(updates.type);
+        }
+
+        if (fields.length === 0) {
+            throw new InvariantError('No fields to update');
+        }
+
+        values.push(id);
+        const result = await this._pool.query({
+            text: `UPDATE machines SET ${fields.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
+            values,
+        });
+
+        if (!result.rows.length) {
+            throw new NotFoundError('Machine not found');
+        }
+
+        return result.rows[0];
+    }
+
+    async deleteMachine(id) {
+        const result = await this._pool.query({
+            text: 'DELETE FROM machines WHERE id = $1 RETURNING id',
+            values: [id],
+        });
+        if (!result.rows.length) {
+            throw new NotFoundError('Machine not found');
+        }
+        return;
     }
 
     // Alias for agent service

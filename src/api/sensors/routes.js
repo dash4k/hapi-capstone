@@ -11,7 +11,7 @@ const routes = (handler) => [
             notes: 'Records new sensor data for a machine',
             validate: {
                 payload: Joi.object({
-                    machineId: Joi.string().required().description('Machine ID').example('machine-001'),
+                    machineId: Joi.number().required().description('Machine ID').example(1),
                     airTemp: Joi.number().required().description('Air temperature in Kelvin').example(298.1),
                     processTemp: Joi.number().required().description('Process temperature in Kelvin').example(308.6),
                     rotationalSpeed: Joi.number().required().description('Rotational speed in RPM').example(1551),
@@ -67,12 +67,12 @@ const routes = (handler) => [
                                     sensorDataHistory: Joi.array().items(
                                         Joi.object({
                                             id: Joi.number().example(1),
-                                            machine_id: Joi.string().example('machine-001'),
+                                            machine_id: Joi.number().example(1),
                                             air_temp: Joi.number().example(298.1),
                                             process_temp: Joi.number().example(308.6),
                                             rotational_speed: Joi.number().example(1551),
                                             torque: Joi.number().example(42.8),
-                                            tool_wear: Joi.number().example(0),
+                                            tool_wear: Joi.number().example(5),
                                             timestamp: Joi.string().example('2024-01-01T00:00:00.000Z'),
                                         })
                                     ),
@@ -110,7 +110,7 @@ const routes = (handler) => [
                                 data: Joi.object({
                                     latestSensorData: Joi.object({
                                         id: Joi.number().example(1),
-                                        machine_id: Joi.string().example('machine-001'),
+                                        machine_id: Joi.number().example(1),
                                         air_temp: Joi.number().example(298.1),
                                         process_temp: Joi.number().example(308.6),
                                         rotational_speed: Joi.number().example(1551),

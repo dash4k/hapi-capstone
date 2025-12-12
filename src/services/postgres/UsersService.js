@@ -1,5 +1,4 @@
 const bcrypt = require('bcrypt');
-const { nanoid } = require('nanoid');
 const { Pool } = require('pg');
 
 const InvariantError = require('../../exceptions/InvariantError');
@@ -14,12 +13,11 @@ class UsersService {
     async addUser({ username, password, fullname }) {
         await this.verifyNewUsername(username);
 
-        const id = `user-${nanoid(16)}`;
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const result = await this._pool.query({
-            text: 'INSERT INTO users VALUES($1, $2, $3, $4) RETURNING id',
-            values: [id, username, hashedPassword, fullname],
+            text: 'INSERT INTO users (username, password, fullname) VALUES($1, $2, $3) RETURNING id',
+            values: [username, hashedPassword, fullname],
         });
 
         if (!result.rows.length) {
@@ -51,6 +49,29 @@ class UsersService {
         }
 
         return result.rows[0];
+    }
+
+    // unused for now
+    async updateUserById(userId, { username, fullname }) {
+        const result = await this._pool.query({
+            text: 'UPDATE users SET username = $1, fullname = $2 WHERE id = $3 RETURNING id',
+            values: [username, fullname, userId],
+        });
+        if (!result.rows.length) {
+            throw new NotFoundError('User not found');
+        }
+        return;
+    }
+
+    async deleteUserById(userId) {
+        const result = await this._pool.query({
+            text: 'DELETE FROM users WHERE id = $1 RETURNING id',
+            values: [userId],
+        });
+        if (!result.rows.length) {
+            throw new NotFoundError('User not found');
+        }
+        return;
     }
 
     async verifyUserCredential({ username, password }) {

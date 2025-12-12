@@ -1,11 +1,12 @@
 const { GoogleGenAI } = require('@google/genai');
 
 class AgentService {
-  constructor(diagnosticsService, sensorsService, machinesService) {
+  constructor(diagnosticsService, sensorsService, machinesService, chatHistoryService) {
     this.diagnosticsService = diagnosticsService;
     this.sensorsService = sensorsService;
     this.machinesService = machinesService;
-    this.sessions = new Map();
+    this.chatHistoryService = chatHistoryService;
+    this.sessions = new Map(); // Keep for temporary session state if needed
 
     // Try to initialize Google Gemini
     this.geminiAvailable = false;
@@ -20,9 +21,6 @@ class AgentService {
     }
   }
 
-  /**
-   * Get context about the system state for Gemini
-   */
   async getSystemContext() {
     const machines = await this.machinesService.getMachines();
     const diagnostics = await this.diagnosticsService.getLatestDiagnostics();
@@ -46,9 +44,6 @@ class AgentService {
     return context;
   }
 
-  /**
-   * Get detailed machine information
-   */
   async getMachineDetail(machineId) {
     // Clean up machine ID
     machineId = machineId.trim().toUpperCase();
@@ -83,86 +78,12 @@ class AgentService {
     return result;
   }
 
-  /**
-   * Get maintenance recommendations
-   */
-  async getRecommendations() {
-    const diagnostics = await this.diagnosticsService.getLatestDiagnostics();
-    const highRisk = diagnostics.filter((d) => d.risk_score > 0.3);
-
-    if (highRisk.length === 0) {
-      return 'No maintenance recommendations at this time.';
-    }
-
-    // Group by failure type
-    const byFailure = {};
-    highRisk.forEach((d) => {
-      const failureType = d.predicted_failure || 'Unknown';
-      if (!byFailure[failureType]) {
-        byFailure[failureType] = [];
-      }
-      byFailure[failureType].push(d);
-    });
-
-    let result = '=== Maintenance Recommendations ===\n\n';
-
-    const priorityOrder = ['HDF', 'PWF', 'OSF', 'TWF', 'RNF', 'Unknown'];
-
-    priorityOrder.forEach((failureType) => {
-      const machinesOfType = byFailure[failureType];
-      if (machinesOfType && machinesOfType.length > 0) {
-        result += `${failureType} - ${machinesOfType.length} machine(s)\n`;
-        result += '─'.repeat(40) + '\n';
-
-        machinesOfType.forEach((d) => {
-          result += `• ${d.machine_id} (Risk: ${(d.risk_score * 100).toFixed(0)}%)\n`;
-          result += `  ${d.recommended_action}\n\n`;
-        });
-      }
-    });
-
-    return result;
-  }
-
-  /**
-   * Get system overview
-   */
-  async getOverview() {
-    const machines = await this.machinesService.getMachines();
-    const diagnostics = await this.diagnosticsService.getLatestDiagnostics();
-
-    if (machines.length === 0) {
-      return 'No machines in database.';
-    }
-
-    const critical = diagnostics.filter((d) => d.risk_score > 0.7).length;
-    const warning = diagnostics.filter((d) => d.risk_score > 0.3 && d.risk_score <= 0.7).length;
-    const normal = diagnostics.filter((d) => d.risk_score <= 0.3).length;
-
-    return `System Overview:
-- Total Machines: ${machines.length}
-- Critical: ${critical}
-- Warning: ${warning}
-- Normal: ${normal}`;
-  }
-
-  /**
-   * Process a chat message and return response
-   */
   async chat(message, sessionId) {
     // Use Google Gemini if available
     if (this.genAI && this.geminiAvailable) {
       try {
-        // Get or create session
-        if (!this.sessions.has(sessionId)) {
-          this.sessions.set(sessionId, {
-            messages: [],
-            lastActivity: new Date(),
-          });
-        }
-
-        const session = this.sessions.get(sessionId);
-        session.lastActivity = new Date();
+        // Load chat history from database
+        const history = await this.chatHistoryService.getSessionHistory(sessionId, 20); // Last 20 messages
 
         // Build context-aware prompt
         const systemContext = await this.getSystemContext();
@@ -192,10 +113,10 @@ ${systemContext}`;
         // Build full prompt with history
         let fullPrompt = systemPrompt + '\n\n';
 
-        if (session.messages.length > 0) {
+        if (history.length > 0) {
           fullPrompt += 'Previous conversation:\n';
-          session.messages.slice(-6).forEach((msg) => {
-            fullPrompt += `${msg.role}: ${msg.content}\n`;
+          history.slice(-10).forEach((msg) => { // Use last 10 messages for context
+            fullPrompt += `${msg.role}: ${msg.message}\n`;
           });
           fullPrompt += '\n';
         }
@@ -209,14 +130,9 @@ ${systemContext}`;
         });
         const answer = response.text;
 
-        // Save to session
-        session.messages.push({ role: 'user', content: message });
-        session.messages.push({ role: 'assistant', content: answer });
-
-        // Keep only last 10 messages
-        if (session.messages.length > 10) {
-          session.messages = session.messages.slice(-10);
-        }
+        // Save messages to database
+        await this.chatHistoryService.saveMessage(sessionId, 'user', message);
+        await this.chatHistoryService.saveMessage(sessionId, 'assistant', answer);
 
         return {
           answer,
@@ -234,103 +150,17 @@ ${systemContext}`;
   }
 
   /**
-   * Simple rule-based chat fallback
+   * Get chat history for a session
    */
-  async simpleChat(message) {
-    const messageLower = message.toLowerCase();
-
-    // Query: machines at risk
-    if (
-      messageLower.includes('risk') ||
-      messageLower.includes('danger') ||
-      messageLower.includes('critical') ||
-      messageLower.includes('warning') ||
-      messageLower.includes('attention')
-    ) {
-      const diagnostics = await this.diagnosticsService.getLatestDiagnostics();
-      const highRisk = diagnostics.filter((d) => d.risk_score > 0.5);
-
-      if (highRisk.length === 0) {
-        return {
-          answer: 'Good news! No machines are currently at high risk. All systems operating normally.',
-          using_ai: false,
-        };
-      }
-
-      let answer = `I found ${highRisk.length} machine(s) that need attention:\n\n`;
-      highRisk.slice(0, 5).forEach((d) => {
-        answer += `• ${d.machine_id}: ${(d.risk_score * 100).toFixed(0)}% risk\n`;
-        answer += `  Issue: ${d.predicted_failure || 'Unknown'}\n`;
-        answer += `  Action: ${d.recommended_action}\n\n`;
-      });
-
-      return { answer, using_ai: false };
-    }
-
-    // Machine-specific query
-    if (messageLower.includes('machine')) {
-      const match = messageLower.match(/machine[_\s]?(\d+)/i);
-      if (match) {
-        const machineId = match[0].toUpperCase().replace(/\s+/g, '_');
-        const answer = await this.getMachineDetail(machineId);
-        return { answer, using_ai: false };
-      }
-    }
-
-    // Overview
-    if (
-      messageLower.includes('overview') ||
-      messageLower.includes('summary') ||
-      messageLower.includes('status') ||
-      messageLower.includes('how many')
-    ) {
-      const answer = await this.getOverview();
-      return { answer, using_ai: false };
-    }
-
-    // Recommendations
-    if (
-      messageLower.includes('recommend') ||
-      messageLower.includes('should') ||
-      messageLower.includes('priorit') ||
-      messageLower.includes('maintenance') ||
-      messageLower.includes('action')
-    ) {
-      const answer = await this.getRecommendations();
-      return { answer, using_ai: false };
-    }
-
-    // Default help response
-    return {
-      answer: `I can help you with:
-• "Which machines are at risk?" - See high-risk machines
-• "Show me Machine 001" - Get details about a specific machine
-• "System overview" - Get overall system status
-• "What maintenance should we prioritize?" - Get recommendations
-
-What would you like to know?`,
-      using_ai: false,
-    };
+  async getHistory(sessionId, limit = 50) {
+    return await this.chatHistoryService.getSessionHistory(sessionId, limit);
   }
 
   /**
    * Clear a chat session
    */
-  clearSession(sessionId) {
-    this.sessions.delete(sessionId);
-  }
-
-  /**
-   * Clean up old sessions (call periodically)
-   */
-  cleanupSessions(maxAgeMinutes = 30) {
-    const now = new Date();
-    this.sessions.forEach((session, sessionId) => {
-      const ageMinutes = (now.getTime() - session.lastActivity.getTime()) / (1000 * 60);
-      if (ageMinutes > maxAgeMinutes) {
-        this.sessions.delete(sessionId);
-      }
-    });
+  async clearSession(sessionId) {
+    return await this.chatHistoryService.deleteSession(sessionId);
   }
 }
 

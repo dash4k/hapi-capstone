@@ -25,7 +25,7 @@ const routes = (handler) => [
                                 status: Joi.string().example('success'),
                                 message: Joi.string().example('User added successfully'),
                                 data: Joi.object({
-                                    userId: Joi.string().example('user-1234567890'),
+                                    userId: Joi.number().example(1),
                                 }),
                             }),
                         },
@@ -47,7 +47,7 @@ const routes = (handler) => [
             notes: 'Returns user information by ID',
             validate: {
                 params: Joi.object({
-                    id: Joi.string().required().description('User ID').example('user-1234567890'),
+                    id: Joi.string().required().description('User ID').example('1'),
                 }),
             },
             plugins: {
@@ -59,11 +59,42 @@ const routes = (handler) => [
                                 status: Joi.string().example('success'),
                                 data: Joi.object({
                                     user: Joi.object({
-                                        id: Joi.string().example('user-1234567890'),
+                                        id: Joi.number().example(1),
                                         username: Joi.string().example('johndoe'),
                                         fullname: Joi.string().example('John Doe'),
                                     }),
                                 }),
+                            }),
+                        },
+                        404: {
+                            description: 'User not found',
+                        },
+                    },
+                },
+            },
+        },
+    },
+    {
+        method: 'DELETE',
+        path: '/users/{id}',
+        handler: handler.deleteUserByIdHandler,
+        options: {
+            tags: ['api', 'users'],
+            description: 'Delete user by ID',
+            notes: 'Deletes a specific user by their ID',
+            validate: {
+                params: Joi.object({
+                    id: Joi.string().required().description('User ID').example('1'),
+                }),
+            },
+            plugins: {
+                'hapi-swagger': {
+                    responses: {
+                        200: {
+                            description: 'User deleted successfully',
+                            schema: Joi.object({
+                                status: Joi.string().example('success'),
+                                message: Joi.string().example('User deleted successfully'),
                             }),
                         },
                         404: {
