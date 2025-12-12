@@ -207,6 +207,47 @@ const routes = (handler) => [
             },
         },
     },
+    {
+        method: 'POST',
+        path: '/diagnostics/bulk',
+        handler: handler.postBulkDiagnosticsHandler,
+        options: {
+            tags: ['api', 'diagnostics'],
+            description: 'Run diagnostics for all machines',
+            notes: 'Automatically runs diagnostic analysis for all machines in the system using their latest sensor data',
+            plugins: {
+                'hapi-swagger': {
+                    responses: {
+                        201: {
+                            description: 'Bulk diagnostics processed',
+                            schema: Joi.object({
+                                status: Joi.string().example('success'),
+                                message: Joi.string().example('Processed 2 of 2 machines'),
+                                data: Joi.object({
+                                    successful: Joi.array().items(Joi.object({
+                                        machineId: Joi.string().example('machine-001'),
+                                        diagnosticsId: Joi.number().example(1),
+                                        success: Joi.boolean().example(true),
+                                    })),
+                                    failed: Joi.array().items(Joi.object({
+                                        machineId: Joi.string().example('machine-002'),
+                                        error: Joi.string().example('Machine not found'),
+                                        success: Joi.boolean().example(false),
+                                    })),
+                                    total: Joi.number().example(2),
+                                    successCount: Joi.number().example(1),
+                                    failureCount: Joi.number().example(1),
+                                }),
+                            }),
+                        },
+                        500: {
+                            description: 'All machines failed to process',
+                        },
+                    },
+                },
+            },
+        },
+    }
 ];
-
+ 
 module.exports = routes;
