@@ -10,19 +10,19 @@
 exports.up = (pgm) => {
     pgm.createTable('machines', {
         id: {
-            type: 'VARCHAR(50)',
+            type: 'SERIAL',
             primaryKey: true,
+        },
+        name: {
+            type: 'VARCHAR(100)',
+            notNull: true,
         },
         type: {
             type: 'VARCHAR(100)',
             notNull: true,
         },
-        location: {
-            type: 'VARCHAR(100)',
-            notNull: true
-        },
-        created_at: {
-            type: 'TEXT',
+        timestamp: {
+            type: 'TIMESTAMPTZ',
             notNull: true,
         },
     });

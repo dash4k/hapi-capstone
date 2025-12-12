@@ -35,6 +35,47 @@ const routes = (handler) => [
     },
   },
   {
+    method: 'GET',
+    path: '/api/agent/history/{sessionId}',
+    handler: handler.getHistoryHandler,
+    options: {
+      tags: ['api', 'agent'],
+      description: 'Get chat history for a session',
+      notes: 'Retrieves all messages in a conversation session',
+      validate: {
+        params: Joi.object({
+          sessionId: Joi.string().required().description('Session ID').example('session-123'),
+        }),
+        query: Joi.object({
+          limit: Joi.number().integer().min(1).max(100).optional().default(50).description('Maximum number of messages to return').example(20),
+        }),
+      },
+      plugins: {
+        'hapi-swagger': {
+          responses: {
+            200: {
+              description: 'Chat history retrieved successfully',
+              schema: Joi.object({
+                status: Joi.string().example('success'),
+                data: Joi.object({
+                  session_id: Joi.string().example('session-123'),
+                  messages: Joi.array().items(
+                    Joi.object({
+                      id: Joi.number().example(1),
+                      role: Joi.string().example('user'),
+                      message: Joi.string().example('What machines need attention?'),
+                      timestamp: Joi.string().example('2025-12-12T10:30:00Z'),
+                    })
+                  ),
+                }),
+              }),
+            },
+          },
+        },
+      },
+    },
+  },
+  {
     method: 'DELETE',
     path: '/api/agent/session/{sessionId}',
     handler: handler.deleteSessionHandler,
@@ -59,44 +100,6 @@ const routes = (handler) => [
             },
             404: {
               description: 'Session not found',
-            },
-          },
-        },
-      },
-    },
-  },
-  {
-    method: 'GET',
-    path: '/api/agent/recommendations',
-    handler: handler.getRecommendationsHandler,
-    options: {
-      tags: ['api', 'agent'],
-      description: 'Get maintenance recommendations',
-      notes: 'Returns prioritized maintenance recommendations based on current system state',
-      plugins: {
-        'hapi-swagger': {
-          responses: {
-            200: {
-              recommendation: "=== Maintenance Recommendations ===\n\nUnknown - 1 machine(s)\n────────────────────────────────────────\n• machine-002 (Risk: 89%)\n  Schedule preventive maintenance inspection\n\n"
-            },
-          },
-        },
-      },
-    },
-  },
-  {
-    method: 'GET',
-    path: '/api/agent/overview',
-    handler: handler.getOverviewHandler,
-    options: {
-      tags: ['api', 'agent'],
-      description: 'Get system overview',
-      notes: 'Returns overall system status and statistics',
-      plugins: {
-        'hapi-swagger': {
-          responses: {
-            200: {
-              overview: 'System Overview:\n- Total Machines: 1\n- Critical: 1\n- Warning: 0\n- Normal: '
             },
           },
         },

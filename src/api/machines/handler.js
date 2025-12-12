@@ -50,6 +50,17 @@ class MachinesHandler {
             })
             .code(200);
     }
+    
+    async deleteMachineByIdHandler(request, h) {
+        const { id } = request.params;
+        await this._service.deleteMachine(id);
+        return h
+            .response({
+                status: 'success',
+                message: 'Machine deleted successfully',
+            })
+            .code(200);
+    }
 }
 
 module.exports = MachinesHandler;

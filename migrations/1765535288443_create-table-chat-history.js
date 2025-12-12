@@ -1,6 +1,7 @@
 /**
  * @type {import('node-pg-migrate').ColumnDefinitions | undefined}
  */
+exports.shorthands = undefined;
 
 /**
  * @param pgm {import('node-pg-migrate').MigrationBuilder}
@@ -8,24 +9,33 @@
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-    pgm.createTable('agent_logs', {
+    pgm.createTable('chat_history', {
         id: {
             type: 'SERIAL',
             primaryKey: true,
         },
-        query: {
-            type: 'TEXT',
+        session_id: {
+            type: 'VARCHAR(50)',
             notNull: true,
         },
-        response: {
-            type: 'JSONB',
+        role: {
+            type: 'VARCHAR(20)',
+            notNull: true,
+        },
+        message: {
+            type: 'TEXT',
             notNull: true,
         },
         timestamp: {
             type: 'TIMESTAMPTZ',
             notNull: true,
+            default: pgm.func('NOW()'),
         },
     });
+
+    // Index for faster queries by session
+    pgm.createIndex('chat_history', 'session_id');
+    pgm.createIndex('chat_history', 'timestamp');
 };
 
 /**
@@ -34,5 +44,5 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
-    pgm.dropTable('agent_logs');
+    pgm.dropTable('chat_history');
 };

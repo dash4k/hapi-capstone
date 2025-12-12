@@ -1,7 +1,7 @@
 const Joi = require('joi');
 
 const SensorDataPayloadSchema = Joi.object({
-    machineId: Joi.string().required(),
+    machineId: Joi.number().required(),
     airTemp: Joi.number().required(),
     processTemp: Joi.number().required(),
     rotationalSpeed: Joi.number().required(),

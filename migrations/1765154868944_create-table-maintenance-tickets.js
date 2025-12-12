@@ -14,7 +14,7 @@ exports.up = (pgm) => {
             primaryKey: true,
         },
         machine_id: {
-            type: 'VARCHAR(50)',
+            type: 'INTEGER',
             references: '"machines"(id)',
             onDelete: 'CASCADE',
             notNull: true,

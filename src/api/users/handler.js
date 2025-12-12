@@ -37,6 +37,17 @@ class UsersHandler {
             })
             .code(200);
     }
+
+    async deleteUserByIdHandler(request, h) {
+        const { id } = request.params;
+        await this._service.deleteUserById(id);
+        return h
+            .response({
+                status: 'success',
+                message: 'User deleted successfully',
+            })
+            .code(200);
+    }
 }
 
 module.exports = UsersHandler;

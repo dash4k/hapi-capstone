@@ -19,20 +19,28 @@ class DiagnosticsHandler {
         console.log("Sensor Payload Sent to FastAPI:", sensor);
 
         const payload = {
-            machine_id: sensor.machine_id,
+            machine_id: String(sensor.machine_id),
             Type: machine.type,
-            "Air temperature": sensor.air_temp,
-            "Process temperature": sensor.process_temp,
-            "Rotational speed": sensor.rotational_speed,
-            "Torque": sensor.torque,
-            "Tool wear": sensor.tool_wear
+            "Air temperature": parseFloat(sensor.air_temp),
+            "Process temperature": parseFloat(sensor.process_temp),
+            "Rotational speed": parseInt(sensor.rotational_speed),
+            "Torque": parseFloat(sensor.torque),
+            "Tool wear": parseInt(sensor.tool_wear)
         };
 
-        const response = await axios.post(
-            `${process.env.FASTAPIPROTOCOL}://${process.env.FASTAPIHOST}:${process.env.FASTAPIPORT}/api/predict`,
-            payload,
-            { timeout: 10000 }
-        );
+        let response;
+        try {
+            response = await axios.post(
+                `${process.env.FASTAPIPROTOCOL}://${process.env.FASTAPIHOST}:${process.env.FASTAPIPORT}/api/predict`,
+                payload,
+                { timeout: 10000 }
+            );
+        } catch (error) {
+            if (error.response) {
+                console.error("FastAPI Validation Error:", JSON.stringify(error.response.data, null, 2));
+            }
+            throw error;
+        }
 
         const diagnostics = {
             ...response.data,
@@ -57,6 +65,69 @@ class DiagnosticsHandler {
                 data: { diagnosticsId },
             })
             .code(201);
+    }
+
+    async postBulkDiagnosticsHandler(request, h) {
+        const machines = await this._machinesService.listAllMachines();
+        const results = [];
+        const errors = [];
+
+        for (const machine of machines) {
+            const machineId = machine.id;
+            try {
+                const sensor = await this._sensorsService.getLatestSensorData(machineId);
+                const machine = await this._machinesService.getMachine(machineId);
+
+                const payload = {
+                    machine_id: String(sensor.machine_id),
+                    Type: machine.type,
+                    "Air temperature": parseFloat(sensor.air_temp),
+                    "Process temperature": parseFloat(sensor.process_temp),
+                    "Rotational speed": parseInt(sensor.rotational_speed),
+                    "Torque": parseFloat(sensor.torque),
+                    "Tool wear": parseInt(sensor.tool_wear)
+                };
+
+                const response = await axios.post(
+                    `${process.env.FASTAPIPROTOCOL}://${process.env.FASTAPIHOST}:${process.env.FASTAPIPORT}/api/predict`,
+                    payload,
+                    { timeout: 10000 }
+                );
+
+                const diagnostics = {
+                    ...response.data,
+                    timestamp: new Date().toISOString()
+                };
+
+                const diagnosticsId = await this._diagnosticsService.addDiagnostic(diagnostics);
+                
+                results.push({
+                    machineId,
+                    diagnosticsId,
+                    success: true
+                });
+            } catch (error) {
+                errors.push({
+                    machineId,
+                    error: error.message,
+                    success: false
+                });
+            }
+        }
+        
+        return h
+            .response({
+                status: errors.length === machines.length ? 'fail' : 'success',
+                message: `Processed ${results.length} of ${machines.length} machines`,
+                data: {
+                    successful: results,
+                    failed: errors,
+                    total: machines.length,
+                    successCount: results.length,
+                    failureCount: errors.length
+                },
+            })
+            .code(errors.length === machines.length ? 500 : 201);
     }
 
     async getDiagnosticHandler(request, h) {
