@@ -65,44 +65,6 @@ const routes = (handler) => [
       },
     },
   },
-  {
-    method: 'GET',
-    path: '/api/agent/recommendations',
-    handler: handler.getRecommendationsHandler,
-    options: {
-      tags: ['api', 'agent'],
-      description: 'Get maintenance recommendations',
-      notes: 'Returns prioritized maintenance recommendations based on current system state',
-      plugins: {
-        'hapi-swagger': {
-          responses: {
-            200: {
-              recommendation: "=== Maintenance Recommendations ===\n\nUnknown - 1 machine(s)\n────────────────────────────────────────\n• machine-002 (Risk: 89%)\n  Schedule preventive maintenance inspection\n\n"
-            },
-          },
-        },
-      },
-    },
-  },
-  {
-    method: 'GET',
-    path: '/api/agent/overview',
-    handler: handler.getOverviewHandler,
-    options: {
-      tags: ['api', 'agent'],
-      description: 'Get system overview',
-      notes: 'Returns overall system status and statistics',
-      plugins: {
-        'hapi-swagger': {
-          responses: {
-            200: {
-              overview: 'System Overview:\n- Total Machines: 1\n- Critical: 1\n- Warning: 0\n- Normal: '
-            },
-          },
-        },
-      },
-    },
-  },
 ];
 
 module.exports = routes;

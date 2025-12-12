@@ -41,36 +41,6 @@ class AgentHandler {
       message: 'Session cleared successfully',
     }).code(200);
   }
-
-  /**
-   * GET /api/agent/recommendations
-   * Get maintenance recommendations
-   */
-  async getRecommendationsHandler(request, h) {
-    const recommendations = await this._agentService.getRecommendations();
-
-    return h.response({
-      status: 'success',
-      data: {
-        recommendations,
-      },
-    }).code(200);
-  }
-
-  /**
-   * GET /api/agent/overview
-   * Get system overview
-   */
-  async getOverviewHandler(request, h) {
-    const overview = await this._agentService.getOverview();
-
-    return h.response({
-      status: 'success',
-      data: {
-        overview,
-      },
-    }).code(200);
-  }
 }
 
 module.exports = AgentHandler;
