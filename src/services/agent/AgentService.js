@@ -36,7 +36,8 @@ class AgentService {
         const failureType = d.most_likely_failure && d.most_likely_failure !== 'No Failure' 
           ? d.most_likely_failure 
           : 'Unknown';
-        context += `- ${d.machine_id}: Risk ${(d.risk_score * 100).toFixed(0)}%, Issue: ${failureType}, Action: ${d.recommended_action}\n`;
+        const diagTime = d.timestamp ? new Date(d.timestamp).toLocaleString() : 'Unknown';
+        context += `- ${d.machine_id}: Risk ${(d.risk_score * 100).toFixed(0)}%, Issue: ${failureType}, Action: ${d.recommended_action} (Diagnosed: ${diagTime})\n`;
       });
     }
 
@@ -63,6 +64,9 @@ class AgentService {
       result += `Risk Score: ${(latestDiagnostic.risk_score * 100).toFixed(0)}%\n`;
       result += `Predicted Issue: ${latestDiagnostic.predicted_failure || 'None'}\n`;
       result += `Recommended Action: ${latestDiagnostic.recommended_action}\n`;
+      if (latestDiagnostic.timestamp) {
+        result += `Last Diagnostic: ${new Date(latestDiagnostic.timestamp).toLocaleString()}\n`;
+      }
     }
 
     if (latestSensor) {
@@ -153,6 +157,12 @@ ${systemContext}`;
         await this.conversationsService.saveMessage(conversationId, 'user', message);
         await this.conversationsService.saveMessage(conversationId, 'assistant', answer);
 
+        // Generate title for new conversations (first message)
+        if (history.length === 0 && !conversation.title) {
+          const title = this.generateConversationTitle(message);
+          await this.conversationsService.updateConversationTitle(conversationId, title);
+        }
+
         return {
           answer,
           conversation_id: conversationId,
@@ -170,6 +180,28 @@ ${systemContext}`;
 
     // No Gemini available
     throw new Error('AI service not configured. Please set GEMINI_API_KEY in .env file.');
+  }
+
+  /**
+   * Generate a conversation title from the first user message
+   */
+  generateConversationTitle(message) {
+    // Remove common question words and clean up
+    let title = message
+      .replace(/^(what|how|when|where|why|who|which|can|could|should|would|is|are|do|does)\s+/i, '')
+      .trim();
+    
+    // Truncate to reasonable length (50 chars)
+    if (title.length > 50) {
+      title = title.substring(0, 47) + '...';
+    }
+    
+    // Capitalize first letter
+    if (title.length > 0) {
+      title = title.charAt(0).toUpperCase() + title.slice(1);
+    }
+    
+    return title || 'New conversation';
   }
 
   /**
