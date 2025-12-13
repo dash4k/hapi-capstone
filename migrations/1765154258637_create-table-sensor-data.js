@@ -15,7 +15,7 @@ exports.up = (pgm) => {
         },
         machine_id: {
             type: 'INTEGER',
-            references: '"machines"(id)',
+            references: 'machines(id)',
             onDelete: 'CASCADE',
             notNull: true,
         },
