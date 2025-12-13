@@ -150,6 +150,11 @@ ${systemContext}`;
         const response = await this.genAI.models.generateContent({
           model: 'gemini-2.5-flash-lite',
           contents: fullPrompt,
+          generationConfig: {
+            temperature: 0.9,
+            topP: 0.95,
+            topK: 40,
+          },
         });
         
         // Validate response
