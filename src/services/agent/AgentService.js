@@ -151,10 +151,21 @@ ${systemContext}`;
           model: 'gemini-2.5-flash',
           contents: fullPrompt,
         });
+        
+        // Validate response
+        if (!response || !response.text) {
+          throw new Error('Invalid response from AI service');
+        }
+        
         const rawAnswer = response.text;
         const answer = this.formatResponse(rawAnswer);
+        
+        // Additional validation - ensure we got actual content
+        if (!answer || answer.trim().length === 0) {
+          throw new Error('Empty response from AI service');
+        }
 
-        // Only create conversation AFTER successful AI response
+        // Only create conversation AFTER successful and validated AI response
         if (isNewConversation) {
           const title = this.generateConversationTitle(message);
           conversation = await this.conversationsService.createConversation(userId, title);
@@ -166,11 +177,17 @@ ${systemContext}`;
           await this.conversationsService.saveMessage(conversationId, 'user', message);
           await this.conversationsService.saveMessage(conversationId, 'assistant', answer);
         } catch (saveError) {
+          console.error('Failed to save messages:', saveError.message);
           // If saving messages fails and we just created the conversation, delete it
           if (isNewConversation && conversationId) {
-            await this.conversationsService.deleteConversation(conversationId);
+            try {
+              await this.conversationsService.deleteConversation(conversationId);
+              console.log(`Deleted conversation ${conversationId} due to save failure`);
+            } catch (deleteError) {
+              console.error('Failed to cleanup conversation:', deleteError.message);
+            }
           }
-          throw saveError;
+          throw new Error('Failed to save conversation messages');
         }
 
         return {
@@ -181,10 +198,24 @@ ${systemContext}`;
         };
       } catch (error) {
         console.error('Gemini error:', error.message);
+        
+        // Check for specific error types
         if (error.message.includes('Unauthorized')) {
           throw error;
         }
-        throw new Error('AI service unavailable. Please check GEMINI_API_KEY configuration.');
+        
+        // Check for quota/rate limit errors
+        if (error.message.includes('quota') || error.message.includes('rate limit') || error.message.includes('429')) {
+          throw new Error('AI service rate limit reached. Please try again later.');
+        }
+        
+        // Check for API key errors
+        if (error.message.includes('API key') || error.message.includes('authentication')) {
+          throw new Error('AI service authentication failed. Please check configuration.');
+        }
+        
+        // Generic error
+        throw new Error(error.message || 'AI service unavailable. Please try again later.');
       }
     }
 
