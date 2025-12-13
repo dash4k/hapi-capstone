@@ -36,6 +36,7 @@ class NotificationsService {
         const result = await this._pool.query({
             text: `
                 SELECT 
+                    id,
                     machine_id, 
                     level,
                     message, 
@@ -47,11 +48,13 @@ class NotificationsService {
 
         return result.rows.map(
             ({
+                id,
                 machine_id,
                 level,
                 message,
                 timestamp
             }) => ({
+                id,
                 machineName: machine_id,
                 level,
                 message,

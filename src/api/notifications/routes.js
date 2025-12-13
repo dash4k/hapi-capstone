@@ -2,10 +2,28 @@ const Joi = require('joi');
 
 const routes = (handler) => [
     {
+        method: 'OPTIONS',
+        path: '/notifications',
+        handler: (request, h) => {
+            return h
+                .response()
+                .header('Access-Control-Allow-Origin', request.headers.origin || '*')
+                .header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+                .header('Access-Control-Allow-Headers', 'authorization, content-type')
+                .header('Access-Control-Allow-Credentials', 'true')
+                .header('Access-Control-Max-Age', '600')
+                .code(200);
+        },
+        options: {
+            auth: false,
+        }
+    },
+    {
         method: 'POST',
         path: '/notifications',
         handler: handler.postNotificationHandler,
         options: {
+            auth: 'pm_jwt',
             tags: ['api', 'notifications'],
             description: 'Add notification',
             notes: 'Creates a new notification for a user about a machine',
@@ -43,16 +61,14 @@ const routes = (handler) => [
     },
     {
         method: 'GET',
-        path: '/notifications/{userId}',
+        path: '/notifications',
         handler: handler.getNotificationsHandler,
         options: {
+            auth: 'pm_jwt',
             tags: ['api', 'notifications'],
             description: 'Get user notifications',
             notes: 'Returns notifications for a specific user',
             validate: {
-                params: Joi.object({
-                    userId: Joi.string().required().description('User ID').example('user-001'),
-                }),
                 query: Joi.object({
                     limit: Joi.number().integer().min(1).max(100).optional().default(10).description('Number of notifications to return').example(10),
                 }),
@@ -67,6 +83,7 @@ const routes = (handler) => [
                                 data: Joi.object({
                                     notifications: Joi.array().items(
                                         Joi.object({
+                                            id: Joi.string().example('1'),
                                             machineName: Joi.string().example('machine-001'),
                                             level: Joi.string().example('warning'),
                                             message: Joi.string().example('Machine temperature is high'),
@@ -85,18 +102,31 @@ const routes = (handler) => [
         },
     },
     {
+        method: 'OPTIONS',
+        path: '/notifications/{id}',
+        handler: (request, h) => {
+            return h
+                .response()
+                .header('Access-Control-Allow-Origin', request.headers.origin || '*')
+                .header('Access-Control-Allow-Methods', 'DELETE, OPTIONS')
+                .header('Access-Control-Allow-Headers', 'authorization, content-type')
+                .header('Access-Control-Allow-Credentials', 'true')
+                .header('Access-Control-Max-Age', '600')
+                .code(200);
+        },
+        options: {
+            auth: false,
+        }
+    },
+    {
         method: 'DELETE',
         path: '/notifications/{id}',
         handler: handler.deleteNotificationHandler,
         options: {
+            auth: 'pm_jwt',
             tags: ['api', 'notifications'],
             description: 'Delete notification',
             notes: 'Deletes a specific notification by ID',
-            validate: {
-                params: Joi.object({
-                    id: Joi.number().integer().required().description('Notification ID').example(1),
-                }),
-            },
             plugins: {
                 'hapi-swagger': {
                     responses: {
