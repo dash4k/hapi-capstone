@@ -1,5 +1,4 @@
 const autoBind = require('auto-bind');
-const { nanoid } = require('nanoid');
 
 class AgentHandler {
   constructor(service, validator) {
@@ -15,59 +14,78 @@ class AgentHandler {
    */
   async postChatHandler(request, h) {
     this._validator.validateChatPayload(request.payload);
-    const { message, session_id } = request.payload;
-    const sessionId = session_id || nanoid(16);
+    const { message, conversation_id } = request.payload;
+    const { id: userId } = request.auth.credentials;
 
-    const result = await this._service.chat(message, sessionId);
+    const result = await this._service.chat(message, conversation_id, userId);
 
     return h.response({
       status: 'success',
       data: {
         response: result.answer,
-        session_id: sessionId,
+        conversation_id: result.conversation_id,
         sources: result.sources,
       },
     }).code(200);
   }
 
   /**
-   * GET /api/agent/history/{sessionId}
-   * Get chat history for a session
+   * GET /api/agent/conversations
+   * Get all conversations for the authenticated user
    */
-  async getHistoryHandler(request, h) {
-    const { sessionId } = request.params;
-    const { limit } = request.query;
-
-    const messages = await this._service.getHistory(sessionId, limit || 50);
+  async getConversationsHandler(request, h) {
+    const { id: userId } = request.auth.credentials;
+    
+    const conversations = await this._service.getUserConversations(userId);
 
     return h.response({
       status: 'success',
       data: {
-        session_id: sessionId,
+        conversations,
+      },
+    }).code(200);
+  }
+
+  /**
+   * GET /api/agent/conversations/{conversationId}
+   * Get messages for a specific conversation
+   */
+  async getConversationMessagesHandler(request, h) {
+    const { conversationId } = request.params;
+    const { limit } = request.query;
+    const { id: userId } = request.auth.credentials;
+
+    const messages = await this._service.getHistory(conversationId, userId, limit || 50);
+
+    return h.response({
+      status: 'success',
+      data: {
+        conversation_id: parseInt(conversationId),
         messages,
       },
     }).code(200);
   }
 
   /**
-   * DELETE /api/agent/session/{sessionId}
-   * Clear chat session
+   * DELETE /api/agent/conversations/{conversationId}
+   * Delete a conversation
    */
-  async deleteSessionHandler(request, h) {
-    const { sessionId } = request.params;
+  async deleteConversationHandler(request, h) {
+    const { conversationId } = request.params;
+    const { id: userId } = request.auth.credentials;
 
-    const deleted = await this._service.clearSession(sessionId);
+    const deleted = await this._service.deleteConversation(conversationId, userId);
 
     if (!deleted) {
       return h.response({
         status: 'fail',
-        message: 'Session not found',
+        message: 'Conversation not found',
       }).code(404);
     }
 
     return h.response({
       status: 'success',
-      message: 'Session cleared successfully',
+      message: 'Conversation deleted successfully',
     }).code(200);
   }
 }

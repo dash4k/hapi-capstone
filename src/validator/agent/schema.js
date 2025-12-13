@@ -2,7 +2,7 @@ const Joi = require('joi');
 
 const ChatPayloadSchema = Joi.object({
     message: Joi.string().required(),
-    session_id: Joi.string().optional(),
+    conversation_id: Joi.number().integer().optional(),
 });
 
 module.exports = { ChatPayloadSchema };

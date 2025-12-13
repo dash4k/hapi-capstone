@@ -26,8 +26,8 @@ const SensorValidator = require('./validator/sensors/index');
 const diagnostics = require('./api/diagnostics');
 const DiagnosticsService = require('./services/postgres/DiagnosticsService');
 
-// Chat History
-const ChatHistoryService = require('./services/postgres/ChatHistoryService');
+// Conversations
+const ConversationsService = require('./services/postgres/ConversationsService');
 
 // Agent (AI Maintenance Assistant)
 const agent = require('./api/agent');
@@ -48,7 +48,7 @@ const init = async () => {
     const machinesService = new MachinesService();
     const sensorsService = new SensorsService();
     const diagnosticsService = new DiagnosticsService();
-    const chatHistoryService = new ChatHistoryService();
+    const conversationsService = new ConversationsService();
     const authenticationsService = new AuthenticationsService();
     const usersService = new UsersService();
     
@@ -56,18 +56,18 @@ const init = async () => {
         diagnosticsService,
         sensorsService,
         machinesService,
-        chatHistoryService
+        conversationsService
     );
     
-    // Clean up old chat messages periodically (older than 30 days)
+    // Clean up old conversations periodically (older than 30 days)
     setInterval(async () => {
         try {
-            const deletedCount = await chatHistoryService.cleanupOldMessages(30);
+            const deletedCount = await conversationsService.cleanupOldConversations(30);
             if (deletedCount > 0) {
-                console.log(`Cleaned up ${deletedCount} old chat messages`);
+                console.log(`Cleaned up ${deletedCount} old conversations`);
             }
         } catch (error) {
-            console.error('Error cleaning up chat history:', error.message);
+            console.error('Error cleaning up conversations:', error.message);
         }
     }, 24 * 60 * 60 * 1000); // Run daily
 
