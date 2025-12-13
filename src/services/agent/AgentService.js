@@ -1,4 +1,17 @@
 const { GoogleGenAI } = require('@google/genai');
+const OpenAI = require('openai');
+
+const GEMINI_MODELS = [
+  'gemini-2.0-flash-lite',
+  'gemini-2.0-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-flash',
+];
+
+const OPENROUTER_MODELS = [
+  'meta-llama/llama-3.1-8b-instruct',
+  'mistralai/mistral-7b-instruct',
+];
 
 class AgentService {
   constructor(diagnosticsService, sensorsService, machinesService, conversationsService) {
@@ -17,6 +30,21 @@ class AgentService {
       }
     } catch (error) {
       console.log('⚠️ Google Gemini initialization failed:', error.message);
+    }
+
+    // OpenRouter
+    this.openRouterAvailable = false;
+    if (process.env.OPENROUTER_API_KEY) {
+      this.openRouter = new OpenAI({
+        apiKey: process.env.OPENROUTER_API_KEY,
+        baseURL: 'https://openrouter.ai/api/v1',
+        defaultHeaders: {
+          'HTTP-Referer': 'http://localhost',
+          'X-Title': 'Predictive Maintenance Copilot',
+        },
+      });
+      this.openRouterAvailable = true;
+      console.log('✅ OpenRouter initialized');
     }
   }
 
@@ -81,31 +109,23 @@ class AgentService {
     return result;
   }
 
-  async chat(message, conversationId, userId) {
-    // Use Google Gemini if available
-    if (this.genAI && this.geminiAvailable) {
-      try {
-        let conversation;
-        let history = [];
-        let isNewConversation = false;
+  async buildFullPrompt(message, conversationId, userId) {
+    let history = [];
 
-        // If existing conversation, load it
-        if (conversationId) {
-          // Verify ownership
-          const hasAccess = await this.conversationsService.verifyConversationOwnership(conversationId, userId);
-          if (!hasAccess) {
-            throw new Error('Unauthorized access to conversation');
-          }
-          conversation = await this.conversationsService.getConversation(conversationId);
-          // Load conversation history from database
-          history = await this.conversationsService.getConversationMessages(conversationId, 20); // Last 20 messages
-        } else {
-          isNewConversation = true;
-        }
+    // If existing conversation, load it
+    if (conversationId) {
+      // Verify ownership
+      const hasAccess = await this.conversationsService.verifyConversationOwnership(conversationId, userId);
+      if (!hasAccess) {
+        throw new Error('Unauthorized access to conversation');
+      }
+      // Load conversation history from database
+      history = await this.conversationsService.getConversationMessages(conversationId, 20); // Last 20 messages
+    }
 
-        // Build context-aware prompt
-        const systemContext = await this.getSystemContext();
-        const systemPrompt = `You are a helpful Predictive Maintenance Copilot assistant.
+    // Build context-aware prompt
+    const systemContext = await this.getSystemContext();
+    const systemPrompt = `You are a helpful Predictive Maintenance Copilot assistant.
 
 Your job is to help engineers and maintenance staff:
 1. Understand which machines are at risk of failure
@@ -133,22 +153,31 @@ Failure types:
 
 ${systemContext}`;
 
-        // Build full prompt with history
-        let fullPrompt = systemPrompt + '\n\n';
+    // Build full prompt with history
+    let fullPrompt = systemPrompt + '\n\n';
 
-        if (history.length > 0) {
-          fullPrompt += 'Previous conversation:\n';
-          history.slice(-10).forEach((msg) => { // Use last 10 messages for context
-            fullPrompt += `${msg.role}: ${msg.message}\n`;
-          });
-          fullPrompt += '\n';
-        }
+    if (history.length > 0) {
+      fullPrompt += 'Previous conversation:\n';
+      history.slice(-10).forEach((msg) => { // Use last 10 messages for context
+        fullPrompt += `${msg.role}: ${msg.message}\n`;
+      });
+      fullPrompt += '\n';
+    }
 
-        fullPrompt += `User: ${message}\n\nAssistant:`;
+    fullPrompt += `User: ${message}\n\nAssistant:`;
 
-        // Get response from Gemini (this might fail)
+    return fullPrompt;
+  }
+
+  async chatWithGemini(fullPrompt) {
+    let lastError;
+
+    // Try each model in order until one succeeds
+    for (const modelName of GEMINI_MODELS) {
+      try {
+        console.log(`Trying Gemini model: ${modelName}`);
         const response = await this.genAI.models.generateContent({
-          model: 'gemini-2.5-flash-lite',
+          model: modelName,
           contents: fullPrompt,
           generationConfig: {
             temperature: 0.9,
@@ -159,73 +188,156 @@ ${systemContext}`;
         
         // Validate response
         if (!response || !response.text) {
-          throw new Error('Invalid response from AI service');
+          throw new Error('Invalid response from Gemini');
         }
         
-        const rawAnswer = response.text;
-        const answer = this.formatResponse(rawAnswer);
+        const text = response.text;
+        if (!text || text.trim().length === 0) {
+          throw new Error('Empty response from Gemini');
+        }
+
+        console.log(`Successfully used Gemini model: ${modelName}`);
+        return text;
         
-        // Additional validation - ensure we got actual content
-        if (!answer || answer.trim().length === 0) {
-          throw new Error('Empty response from AI service');
-        }
-
-        // Only create conversation AFTER successful and validated AI response
-        if (isNewConversation) {
-          const title = this.generateConversationTitle(message);
-          conversation = await this.conversationsService.createConversation(userId, title);
-          conversationId = conversation.id;
-        }
-
-        // Save messages to database (wrap in try-catch to delete conversation if this fails)
-        try {
-          await this.conversationsService.saveMessage(conversationId, 'user', message);
-          await this.conversationsService.saveMessage(conversationId, 'assistant', answer);
-        } catch (saveError) {
-          console.error('Failed to save messages:', saveError.message);
-          // If saving messages fails and we just created the conversation, delete it
-          if (isNewConversation && conversationId) {
-            try {
-              await this.conversationsService.deleteConversation(conversationId);
-              console.log(`Deleted conversation ${conversationId} due to save failure`);
-            } catch (deleteError) {
-              console.error('Failed to cleanup conversation:', deleteError.message);
-            }
-          }
-          throw new Error('Failed to save conversation messages');
-        }
-
-        return {
-          answer,
-          conversation_id: conversationId,
-          sources: ['Google Gemini AI'],
-          using_ai: true,
-        };
       } catch (error) {
-        console.error('Gemini error:', error.message);
-        
-        // Check for specific error types
-        if (error.message.includes('Unauthorized')) {
-          throw error;
-        }
-        
-        // Check for quota/rate limit errors
-        if (error.message.includes('quota') || error.message.includes('rate limit') || error.message.includes('429')) {
-          throw new Error('AI service rate limit reached. Please try again later.');
-        }
-        
-        // Check for API key errors
-        if (error.message.includes('API key') || error.message.includes('authentication')) {
-          throw new Error('AI service authentication failed. Please check configuration.');
-        }
-        
-        // Generic error
-        throw new Error(error.message || 'AI service unavailable. Please try again later.');
+        console.warn(`Gemini model ${modelName} failed:`, error.message);
+        lastError = error;
+        // Continue to next model
       }
     }
 
-    // No Gemini available
-    throw new Error('AI service not configured. Please set GEMINI_API_KEY in .env file.');
+    throw lastError || new Error('All Gemini models failed');
+  }
+
+  async chatWithOpenRouter(fullPrompt) {
+    // Convert prompt to OpenRouter message format
+    const messages = [{ role: 'user', content: fullPrompt }];
+    
+    let lastError;
+
+    for (const modelName of OPENROUTER_MODELS) {
+      try {
+        console.log(`Trying OpenRouter model: ${modelName}`);
+        
+        const response = await this.openRouter.chat.completions.create({
+          model: modelName,
+          messages,
+          temperature: 0.9,
+          top_p: 0.95,
+        });
+
+        const text = response.choices?.[0]?.message?.content;
+        if (!text || text.trim().length === 0) {
+          throw new Error('Empty response from OpenRouter');
+        }
+
+        console.log(`Successfully used OpenRouter model: ${modelName}`);
+        return text;
+        
+      } catch (error) {
+        console.warn(`OpenRouter model ${modelName} failed:`, error.message);
+        lastError = error;
+        // Continue to next model
+      }
+    }
+
+    throw lastError || new Error('All OpenRouter models failed');
+  }
+
+  async chat(message, conversationId, userId) {
+    try {
+      let conversation;
+      let isNewConversation = false;
+
+      if (!conversationId) {
+        isNewConversation = true;
+      }
+
+      // Build the full prompt (same for both Gemini and OpenRouter)
+      const fullPrompt = await this.buildFullPrompt(message, conversationId, userId);
+
+      let rawAnswer;
+      let source;
+
+      // Try Gemini first
+      if (this.geminiAvailable) {
+        try {
+          rawAnswer = await this.chatWithGemini(fullPrompt);
+          source = 'Google Gemini AI';
+        } catch (geminiError) {
+          console.error('Gemini failed:', geminiError.message);
+          
+          // If Gemini fails and OpenRouter is available, try it
+          if (!this.openRouterAvailable) {
+            throw geminiError; // Re-throw if no fallback available
+          }
+          
+          console.log('Falling back to OpenRouter...');
+          rawAnswer = await this.chatWithOpenRouter(fullPrompt);
+          source = 'OpenRouter AI';
+        }
+      } else if (this.openRouterAvailable) {
+        // Gemini not available, use OpenRouter directly
+        rawAnswer = await this.chatWithOpenRouter(fullPrompt);
+        source = 'OpenRouter AI';
+      } else {
+        throw new Error('No AI service available. Please configure GEMINI_API_KEY or OPENROUTER_API_KEY.');
+      }
+
+      const answer = this.formatResponse(rawAnswer);
+
+      // Only create conversation AFTER successful and validated AI response
+      if (isNewConversation) {
+        const title = this.generateConversationTitle(message);
+        conversation = await this.conversationsService.createConversation(userId, title);
+        conversationId = conversation.id;
+      }
+
+      // Save messages to database
+      try {
+        await this.conversationsService.saveMessage(conversationId, 'user', message);
+        await this.conversationsService.saveMessage(conversationId, 'assistant', answer, source);
+      } catch (saveError) {
+        console.error('Failed to save messages:', saveError.message);
+        // If saving messages fails and we just created the conversation, delete it
+        if (isNewConversation && conversationId) {
+          try {
+            await this.conversationsService.deleteConversation(conversationId);
+            console.log(`Deleted conversation ${conversationId} due to save failure`);
+          } catch (deleteError) {
+            console.error('Failed to cleanup conversation:', deleteError.message);
+          }
+        }
+        throw new Error('Failed to save conversation messages');
+      }
+
+      return {
+        answer,
+        conversation_id: conversationId,
+        sources: [source],
+        using_ai: true,
+      };
+    } catch (error) {
+      console.error('Chat error:', error.message);
+      
+      // Check for specific error types
+      if (error.message.includes('Unauthorized')) {
+        throw error;
+      }
+      
+      // Check for quota/rate limit errors
+      if (error.message.includes('quota') || error.message.includes('rate limit') || error.message.includes('429')) {
+        throw new Error('AI service rate limit reached. Please try again later.');
+      }
+      
+      // Check for API key errors
+      if (error.message.includes('API key') || error.message.includes('authentication')) {
+        throw new Error('AI service authentication failed. Please check configuration.');
+      }
+      
+      // Generic error
+      throw new Error(error.message || 'AI service unavailable. Please try again later.');
+    }
   }
 
   /**
