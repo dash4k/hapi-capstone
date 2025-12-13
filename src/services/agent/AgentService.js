@@ -85,22 +85,23 @@ class AgentService {
     // Use Google Gemini if available
     if (this.genAI && this.geminiAvailable) {
       try {
-        // Create new conversation if needed
         let conversation;
-        if (!conversationId) {
-          conversation = await this.conversationsService.createConversation(userId);
-          conversationId = conversation.id;
-        } else {
+        let history = [];
+        let isNewConversation = false;
+
+        // If existing conversation, load it
+        if (conversationId) {
           // Verify ownership
           const hasAccess = await this.conversationsService.verifyConversationOwnership(conversationId, userId);
           if (!hasAccess) {
             throw new Error('Unauthorized access to conversation');
           }
           conversation = await this.conversationsService.getConversation(conversationId);
+          // Load conversation history from database
+          history = await this.conversationsService.getConversationMessages(conversationId, 20); // Last 20 messages
+        } else {
+          isNewConversation = true;
         }
-
-        // Load conversation history from database
-        const history = await this.conversationsService.getConversationMessages(conversationId, 20); // Last 20 messages
 
         // Build context-aware prompt
         const systemContext = await this.getSystemContext();
@@ -145,7 +146,7 @@ ${systemContext}`;
 
         fullPrompt += `User: ${message}\n\nAssistant:`;
 
-        // Get response from Gemini
+        // Get response from Gemini (this might fail)
         const response = await this.genAI.models.generateContent({
           model: 'gemini-2.5-flash',
           contents: fullPrompt,
@@ -153,15 +154,16 @@ ${systemContext}`;
         const rawAnswer = response.text;
         const answer = this.formatResponse(rawAnswer);
 
+        // Only create conversation AFTER successful AI response
+        if (isNewConversation) {
+          const title = this.generateConversationTitle(message);
+          conversation = await this.conversationsService.createConversation(userId, title);
+          conversationId = conversation.id;
+        }
+
         // Save messages to database
         await this.conversationsService.saveMessage(conversationId, 'user', message);
         await this.conversationsService.saveMessage(conversationId, 'assistant', answer);
-
-        // Generate title for new conversations (first message)
-        if (history.length === 0 && !conversation.title) {
-          const title = this.generateConversationTitle(message);
-          await this.conversationsService.updateConversationTitle(conversationId, title);
-        }
 
         return {
           answer,
