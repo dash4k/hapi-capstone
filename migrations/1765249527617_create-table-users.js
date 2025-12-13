@@ -26,6 +26,16 @@ exports.up = (pgm) => {
             type: 'VARCHAR(200)',
             notNull: true,
         },
+        created_at: {
+            type: 'TIMESTAMPTZ',
+            notNull: true,
+            default: pgm.func('NOW()'),
+        },
+        updated_at: {
+            type: 'TIMESTAMPTZ',
+            notNull: true,
+            default: pgm.func('NOW()'),
+        },
     });
 };
 
