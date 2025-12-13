@@ -31,7 +31,7 @@ class NotificationsHandler {
     }
 
     async getNotificationsHandler(request, h) {
-        const { userId } = request.params;
+        const { id: userId } = request.auth.credentials;
         const { limit } = request.query;
 
         await this._usersService.verifyUserExist(userId);
@@ -49,7 +49,7 @@ class NotificationsHandler {
     }
 
     async deleteNotificationHandler(request, h) {
-        const { id } = request.params;
+        const { id } = request.auth.credentials;
         await this._notificationsService.deleteNotification({ id });
 
         return h
