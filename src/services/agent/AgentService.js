@@ -161,9 +161,17 @@ ${systemContext}`;
           conversationId = conversation.id;
         }
 
-        // Save messages to database
-        await this.conversationsService.saveMessage(conversationId, 'user', message);
-        await this.conversationsService.saveMessage(conversationId, 'assistant', answer);
+        // Save messages to database (wrap in try-catch to delete conversation if this fails)
+        try {
+          await this.conversationsService.saveMessage(conversationId, 'user', message);
+          await this.conversationsService.saveMessage(conversationId, 'assistant', answer);
+        } catch (saveError) {
+          // If saving messages fails and we just created the conversation, delete it
+          if (isNewConversation && conversationId) {
+            await this.conversationsService.deleteConversation(conversationId);
+          }
+          throw saveError;
+        }
 
         return {
           answer,
