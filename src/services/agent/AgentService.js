@@ -148,7 +148,7 @@ ${systemContext}`;
 
         // Get response from Gemini (this might fail)
         const response = await this.genAI.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-2.5-flash-lite',
           contents: fullPrompt,
         });
         
