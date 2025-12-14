@@ -17,6 +17,7 @@ async function run() {
   const tables = [
     'messages',
     'conversations',
+    'notifications',
     'maintenance_tickets',
     'diagnostics',
     'sensor_data',
