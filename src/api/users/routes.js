@@ -14,6 +14,7 @@ const routes = (handler) => [
                     username: Joi.string().required().description('Username').example('johndoe'),
                     password: Joi.string().min(6).required().description('Password (minimum 6 characters)').example('password123'),
                     fullname: Joi.string().required().description('Full name').example('John Doe'),
+                    role: Joi.string().required().description('User role').example('operator'),
                 }),
             },
             plugins: {
@@ -62,6 +63,7 @@ const routes = (handler) => [
                                         id: Joi.number().example(1),
                                         username: Joi.string().example('johndoe'),
                                         fullname: Joi.string().example('John Doe'),
+                                        role: Joi.string().example('operator'),
                                     }),
                                 }),
                             }),

@@ -10,14 +10,14 @@ class UsersService {
         this._pool = new Pool();
     }
 
-    async addUser({ username, password, fullname }) {
+    async addUser({ username, password, fullname, role }) {
         await this.verifyNewUsername(username);
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const result = await this._pool.query({
-            text: 'INSERT INTO users (username, password, fullname) VALUES($1, $2, $3) RETURNING id',
-            values: [username, hashedPassword, fullname],
+            text: 'INSERT INTO users (username, password, fullname, role) VALUES($1, $2, $3, $4) RETURNING id',
+            values: [username, hashedPassword, fullname, role],
         });
 
         if (!result.rows.length) {
@@ -40,7 +40,7 @@ class UsersService {
 
     async getUserById(userId) {
         const result = await this._pool.query({
-            text: 'SELECT id, username, fullname FROM users WHERE id = $1',
+            text: 'SELECT id, username, fullname, role FROM users WHERE id = $1',
             values: [userId],
         });
 
@@ -52,10 +52,10 @@ class UsersService {
     }
 
     // unused for now
-    async updateUserById(userId, { username, fullname }) {
+    async updateUserById(userId, { username, fullname, role }) {
         const result = await this._pool.query({
-            text: 'UPDATE users SET username = $1, fullname = $2 WHERE id = $3 RETURNING id',
-            values: [username, fullname, userId],
+            text: 'UPDATE users SET username = $1, fullname = $2, role = $3 WHERE id = $4 RETURNING id',
+            values: [username, fullname, role, userId],
         });
         if (!result.rows.length) {
             throw new NotFoundError('User not found');
