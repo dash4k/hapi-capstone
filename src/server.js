@@ -77,6 +77,7 @@ const init = async () => {
         routes: {
             cors: {
                 origin: ['*'],
+                credentials: true,
             },
         },
     });
