@@ -51,6 +51,14 @@ class UsersService {
         return result.rows[0];
     }
 
+    async getAllUsers() {
+        const result = await this._pool.query({
+            text: 'SELECT id, username, fullname, role FROM users ORDER BY id',
+        });
+
+        return result.rows;
+    }
+
     // unused for now
     async updateUserById(userId, { username, fullname, role }) {
         const result = await this._pool.query({

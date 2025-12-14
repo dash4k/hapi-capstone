@@ -40,6 +40,38 @@ const routes = (handler) => [
     },
     {
         method: 'GET',
+        path: '/users',
+        handler: handler.getAllUsersHandler,
+        options: {
+            tags: ['api', 'users'],
+            description: 'Get all users',
+            notes: 'Returns a list of all users',
+            plugins: {
+                'hapi-swagger': {
+                    responses: {
+                        200: {
+                            description: 'Users retrieved successfully',
+                            schema: Joi.object({
+                                status: Joi.string().example('success'),
+                                data: Joi.object({
+                                    users: Joi.array().items(
+                                        Joi.object({
+                                            id: Joi.number().example(1),
+                                            username: Joi.string().example('johndoe'),
+                                            fullname: Joi.string().example('John Doe'),
+                                            role: Joi.string().example('operator'),
+                                        })
+                                    ),
+                                }),
+                            }),
+                        },
+                    },
+                },
+            },
+        },
+    },
+    {
+        method: 'GET',
         path: '/users/{id}',
         handler: handler.getUserByIdHandler,
         options: {
