@@ -137,6 +137,93 @@ const routes = (handler) => [
             },
         },
     },
+    {
+        method: 'GET',
+        path: '/machines/count',
+        handler: handler.getCountMachinesHandler,
+        options: {
+            tags: ['api', 'machines'],
+            description: 'Get the total number of machines',
+            plugins: {
+                'hapi-swagger': {
+                    responses: {
+                        200: {
+                            description: 'Machine counted successfully',
+                            schema: Joi.object({
+                                status: Joi.string().example('success'),
+                                data: Joi.object({
+                                    totalMachines: Joi.number().example(1),
+                                }),
+                            }),
+                        },
+                    },
+                },
+            },
+        },
+    },
+    {
+        method: 'GET',
+        path: '/machines/health',
+        handler: handler.getMachinesHealthHandler,
+        options: {
+            tags: ['api', 'machines'],
+            description: 'Get the list of health history for machines',
+            plugins: {
+                'hapi-swagger': {
+                    responses: {
+                        200: {
+                            description: 'Machine health retrieved successfully',
+                            schema: Joi.object({
+                                status: Joi.string().example('success'),
+                                data: Joi.object({
+                                    machinesHealth: Joi.array().items(
+                                        Joi.object({
+                                            id: Joi.number().example(1),
+                                            name: Joi.string().example('Machine A'),
+                                            healthHistory: Joi.array().items(
+                                                Joi.object({
+                                                    health: Joi.number().example(88),
+                                                    date: Joi.string().example('09-12-2025'),
+                                                })
+                                            ).example([
+                                                { health: 88, date: '05-12-2025' },
+                                                { health: 90, date: '07-12-2025' },
+                                                { health: 92, date: '09-12-2025' },
+                                            ]),
+                                        })
+                                    ).example([
+                                        {
+                                            id: 1,
+                                            name: 'Machine A',
+                                            healthHistory: [
+                                                { health: 88, date: '05-12-2025' },
+                                                { health: 90, date: '07-12-2025' },
+                                            ],
+                                        },
+                                        {
+                                            id: 2,
+                                            name: 'Machine B',
+                                            healthHistory: [
+                                                { health: 95, date: '05-12-2025' },
+                                                { health: 93, date: '07-12-2025' },
+                                            ],
+                                        },
+                                    ]),
+                                }),
+                            }),
+                        },
+                        500: {
+                            description: 'Internal server error',
+                            schema: Joi.object({
+                                status: Joi.string().example('error'),
+                                message: Joi.string().example('Failed to retrieve machine health'),
+                            }),
+                        },
+                    },
+                },
+            },
+        },
+    },
 ];
 
 module.exports = routes;

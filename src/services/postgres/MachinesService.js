@@ -86,6 +86,59 @@ class MachinesService {
         return;
     }
 
+    async getMachinesCount() {
+        const result = await this._pool.query({
+            text: 'SELECT COUNT(*) AS total_machine from machines',
+        });
+
+        return parseInt(result.rows[0].total_machine, 10);
+    }
+
+    async getMachinesHealth() {
+        const result = await this._pool.query({
+            text: `
+                SELECT 
+                    machines.id,
+                    machines.name,
+                    diagnostics.risk_score,
+                    ROUND((1 - diagnostics.risk_score) * 100)::INTEGER as health_score,
+                    TO_CHAR(diagnostics.timestamp, 'DD-MM-YYYY') as date
+                FROM machines
+                LEFT JOIN LATERAL (
+                    SELECT 
+                        risk_score,
+                        timestamp
+                    FROM diagnostics
+                    WHERE diagnostics.machine_id = machines.id
+                    ORDER BY diagnostics.timestamp DESC
+                    LIMIT 5
+                ) diagnostics ON true
+                ORDER BY machines.id, diagnostics.timestamp ASC
+            `
+        });
+        
+        return result.rows.reduce((acc, row) => {
+            const machine = acc.find(m => m.id === row.id);
+            
+            if (machine) {
+                machine.healthHistory.push({
+                    health: row.health_score,
+                    date: row.date
+                });
+            } else {
+                acc.push({
+                    id: row.id,
+                    name: row.name,
+                    healthHistory: row.health_score ? [{
+                        health: row.health_score,
+                        date: row.date
+                    }] : []
+                });
+            }
+            return acc;
+        }, []);
+    }
+
     // Alias for agent service
     async getMachines() {
         return this.listAllMachines();

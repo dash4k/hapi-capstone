@@ -61,6 +61,33 @@ class MachinesHandler {
             })
             .code(200);
     }
+
+    async getCountMachinesHandler(request, h) {
+        const totalMachines = await this._service.getMachinesCount();
+
+        return h
+            .response({
+                status: 'success',
+                data: {
+                    totalMachines,
+                },
+            })
+            .code(200);
+    }
+
+    async getMachinesHealthHandler(request, h) {
+        const machinesHealth = await this._service.getMachinesHealth();
+
+        return h
+            .response({
+                status: 'success',
+                data: {
+                    machinesHealth,
+                },
+            })
+            .code(200);
+    }
+
 }
 
 module.exports = MachinesHandler;
