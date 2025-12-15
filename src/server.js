@@ -26,6 +26,10 @@ const SensorValidator = require('./validator/sensors/index');
 const diagnostics = require('./api/diagnostics');
 const DiagnosticsService = require('./services/postgres/DiagnosticsService');
 
+// Notifications
+const notifications = require('./api/notifications');
+const NotificationsService = require('./services/postgres/NotificationsService');
+
 // Conversations
 const ConversationsService = require('./services/postgres/ConversationsService');
 
@@ -53,6 +57,7 @@ const init = async () => {
     const machinesService = new MachinesService();
     const sensorsService = new SensorsService();
     const diagnosticsService = new DiagnosticsService();
+    const notificationsService = new NotificationsService();
     const conversationsService = new ConversationsService();
     const authenticationsService = new AuthenticationsService();
     const usersService = new UsersService();
@@ -82,10 +87,8 @@ const init = async () => {
         host: process.env.HOST,
         routes: {
             cors: {
-                origin: ['*'],
+                origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : ['*'],
                 credentials: true,
-                additionalHeaders: ['authorization', 'content-type'],
-                additionalExposedHeaders: ['authorization']
             },
         },
     });
@@ -145,6 +148,13 @@ const init = async () => {
                 diagnosticsService,
                 sensorsService,
                 machinesService,
+                notificationsService,
+            },
+        },
+        {
+            plugin: notifications,
+            options: {
+                service: notificationsService,
             },
         },
         {

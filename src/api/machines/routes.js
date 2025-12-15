@@ -107,6 +107,41 @@ const routes = (handler) => [
         },
     },
     {
+        method: 'PUT',
+        path: '/machines/{id}',
+        handler: handler.putMachineHandler,
+        options: {
+            tags: ['api', 'machines'],
+            description: 'Update machine by ID',
+            notes: 'Updates a specific machine by its ID',
+            validate: {
+                params: Joi.object({
+                    id: Joi.string().required().description('Machine ID').example('1'),
+                }),
+                payload: Joi.object({
+                    name: Joi.string().required().description('Machine name').example('CNC Machine A'),
+                    type: Joi.string().required().description('Machine type (L, M, or H)').example('M'),
+                }),
+            },
+            plugins: {
+                'hapi-swagger': {
+                    responses: {
+                        200: {
+                            description: 'Machine updated successfully',
+                            schema: Joi.object({
+                                status: Joi.string().example('success'),
+                                message: Joi.string().example('Machine updated successfully'),
+                            }),
+                        },
+                        404: {
+                            description: 'Machine not found',
+                        },
+                    },
+                },
+            },
+        },
+    },
+    {
         method: 'DELETE',
         path: '/machines/{id}',
         handler: handler.deleteMachineByIdHandler,

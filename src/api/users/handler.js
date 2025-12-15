@@ -38,6 +38,19 @@ class UsersHandler {
             .code(200);
     }
 
+    async getAllUsersHandler(request, h) {
+        const users = await this._service.getAllUsers();
+
+        return h
+            .response({
+                status: 'success',
+                data: {
+                    users,
+                },
+            })
+            .code(200);
+    }
+
     async deleteUserByIdHandler(request, h) {
         const { id } = request.params;
         await this._service.deleteUserById(id);

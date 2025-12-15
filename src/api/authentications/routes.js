@@ -3,7 +3,7 @@ const Joi = require('joi');
 const routes = (handler) => [
     {
         method: 'POST',
-        path: '/authentications',
+        path: '/auth/login',
         handler: handler.postAuthenticationHandler,
         options: {
             tags: ['api', 'authentications'],
@@ -38,28 +38,29 @@ const routes = (handler) => [
         },
     },
     {
-        method: 'PUT',
-        path: '/authentications',
+        method: 'POST',
+        path: '/auth/refresh',
         handler: handler.putAuthenticationHandler,
         options: {
             tags: ['api', 'authentications'],
-            description: 'Refresh access token',
-            notes: 'Generates a new access token using a refresh token',
+            description: 'Refresh tokens',
+            notes: 'Generates new access and refresh tokens using current refresh token (token rotation)',
             validate: {
                 payload: Joi.object({
-                    refreshToken: Joi.string().required().description('Refresh token').example('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'),
+                    refreshToken: Joi.string().required().description('Current refresh token').example('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'),
                 }),
             },
             plugins: {
                 'hapi-swagger': {
                     responses: {
                         200: {
-                            description: 'Access token refreshed successfully',
+                            description: 'Tokens refreshed successfully with rotation',
                             schema: Joi.object({
                                 status: Joi.string().example('success'),
-                                message: Joi.string().example('Access Token updated successfully'),
+                                message: Joi.string().example('Tokens refreshed successfully'),
                                 data: Joi.object({
                                     accessToken: Joi.string().example('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'),
+                                    refreshToken: Joi.string().example('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'),
                                 }),
                             }),
                         },
@@ -72,8 +73,8 @@ const routes = (handler) => [
         },
     },
     {
-        method: 'DELETE',
-        path: '/authentications',
+        method: 'POST',
+        path: '/auth/logout',
         handler: handler.deleteAuthenticationHandler,
         options: {
             tags: ['api', 'authentications'],

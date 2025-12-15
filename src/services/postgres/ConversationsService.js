@@ -85,10 +85,10 @@ class ConversationsService {
     /**
      * Save a message to a conversation
      */
-    async saveMessage(conversationId, role, message) {
+    async saveMessage(conversationId, role, message, source = null) {
         const result = await this._pool.query({
-            text: 'INSERT INTO messages (conversation_id, role, message, timestamp) VALUES($1, $2, $3, NOW()) RETURNING *',
-            values: [conversationId, role, message],
+            text: 'INSERT INTO messages (conversation_id, role, message, source, timestamp) VALUES($1, $2, $3, $4, NOW()) RETURNING *',
+            values: [conversationId, role, message, source],
         });
 
         // Update conversation's updated_at

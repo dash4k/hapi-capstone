@@ -12,16 +12,19 @@ exports.seed = async function(knex) {
       username: 'admin',
       password: hashedPassword,
       fullname: 'Admin User',
+      role: 'admin',
     },
     {
       username: 'engineer1',
       password: hashedPassword,
       fullname: 'John Engineer',
+      role: 'user',
     },
     {
       username: 'engineer2',
       password: hashedPassword,
       fullname: 'Jane Engineer',
+      role: 'user',
     }
   ]);
 };

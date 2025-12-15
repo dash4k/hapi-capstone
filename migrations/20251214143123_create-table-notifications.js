@@ -8,37 +8,29 @@
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-    pgm.createTable('users', {
+    pgm.createTable('notifications', {
         id: {
             type: 'SERIAL',
             primaryKey: true,
         },
-        username: {
-            type: 'VARCHAR(100)',
-            unique: true,
+        machine_id: {
+            type: 'INTEGER',
+            notNull: false,
+            references: 'machines(id)',
+            onDelete: 'CASCADE',
+        },
+        level: {
+            type: 'VARCHAR(20)',
             notNull: true,
         },
-        password: {
-            type: 'VARCHAR(200)',
-            notNull: true,
-        },
-        fullname: {
-            type: 'VARCHAR(200)',
-            notNull: true,
-        },
-        role: {
-            type: 'VARCHAR(50)',
+        message: {
+            type: 'TEXT',
             notNull: true,
         },
         created_at: {
             type: 'TIMESTAMPTZ',
             notNull: true,
-            default: pgm.func('NOW()'),
-        },
-        updated_at: {
-            type: 'TIMESTAMPTZ',
-            notNull: true,
-            default: pgm.func('NOW()'),
+            default: pgm.func('current_timestamp'),
         },
     });
 };
@@ -49,5 +41,5 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
-    pgm.dropTable('users');
+    pgm.dropTable('notifications');
 };

@@ -3,30 +3,31 @@ exports.seed = async function(knex) {
   await knex('machines').del();
   
   // Inserts seed entries
+  // FastAPI only accepts types: L (Low), M (Medium), H (High)
   await knex('machines').insert([
     {
       name: 'CNC Machine A1',
-      type: 'CNC Milling',
+      type: 'L',
       timestamp: new Date(),
     },
     {
       name: 'Lathe B2',
-      type: 'Turning Lathe',
+      type: 'M',
       timestamp: new Date(),
     },
     {
       name: 'Press C3',
-      type: 'Hydraulic Press',
+      type: 'M',
       timestamp: new Date(),
     },
     {
       name: 'Welder D4',
-      type: 'Arc Welder',
+      type: 'H',
       timestamp: new Date(),
     },
     {
       name: 'Conveyor E5',
-      type: 'Assembly Line',
+      type: 'L',
       timestamp: new Date(),
     }
   ]);

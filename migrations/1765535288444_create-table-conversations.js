@@ -60,6 +60,10 @@ exports.up = (pgm) => {
             type: 'TEXT',
             notNull: true,
         },
+        source: {
+            type: 'VARCHAR(100)',
+            notNull: false,
+        },
         timestamp: {
             type: 'TIMESTAMPTZ',
             notNull: true,

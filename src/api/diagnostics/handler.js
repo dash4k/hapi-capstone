@@ -2,10 +2,11 @@ const autoBind = require("auto-bind");
 const { default: axios } = require("axios");
 
 class DiagnosticsHandler {
-    constructor(diagnosticsService, sensorsService, machinesService) {
+    constructor(diagnosticsService, sensorsService, machinesService, notificationsService) {
         this._diagnosticsService = diagnosticsService;
         this._sensorsService = sensorsService;
         this._machinesService = machinesService;
+        this._notificationsService = notificationsService;
 
         autoBind(this);
     }
@@ -58,6 +59,28 @@ class DiagnosticsHandler {
 
         const diagnosticsId = await this._diagnosticsService.addDiagnostic(diagnostics);
 
+        // Create notification if failure is predicted
+        if (diagnostics.failure_prediction === 1) {
+            const failureTypes = diagnostics.failure_type_probabilities || {};
+            const maxProb = Math.max(...Object.values(failureTypes));
+            const failureType = Object.keys(failureTypes).find(key => failureTypes[key] === maxProb);
+            
+            const level = maxProb > 0.7 ? 'critical' : 'warning';
+            const message = failureType 
+                ? `${failureType} failure predicted with ${(maxProb * 100).toFixed(1)}% probability`
+                : `Machine failure predicted - immediate inspection recommended`;
+            
+            try {
+                await this._notificationsService.addNotification({
+                    machineId: parseInt(machineId),
+                    level,
+                    message,
+                });
+            } catch (error) {
+                console.error('Failed to create notification:', error);
+            }
+        }
+
         return h
             .response({
                 status: 'success',
@@ -100,6 +123,28 @@ class DiagnosticsHandler {
                 };
 
                 const diagnosticsId = await this._diagnosticsService.addDiagnostic(diagnostics);
+                
+                // Create notification if failure is predicted
+                if (diagnostics.failure_prediction === 1) {
+                    const failureTypes = diagnostics.failure_type_probabilities || {};
+                    const maxProb = Math.max(...Object.values(failureTypes));
+                    const failureType = Object.keys(failureTypes).find(key => failureTypes[key] === maxProb);
+                    
+                    const level = maxProb > 0.7 ? 'critical' : 'warning';
+                    const message = failureType 
+                        ? `${failureType} failure predicted with ${(maxProb * 100).toFixed(1)}% probability`
+                        : `Machine failure predicted - immediate inspection recommended`;
+                    
+                    try {
+                        await this._notificationsService.addNotification({
+                            machineId: parseInt(machineId),
+                            level,
+                            message,
+                        });
+                    } catch (error) {
+                        console.error('Failed to create notification:', error);
+                    }
+                }
                 
                 results.push({
                     machineId,
