@@ -3,7 +3,7 @@ const Joi = require('joi');
 const routes = (handler) => [
     {
         method: 'POST',
-        path: '/notifications',
+        path: '/api/notifications',
         handler: handler.postNotificationHandler,
         options: {
             tags: ['api', 'notifications'],
@@ -39,7 +39,7 @@ const routes = (handler) => [
     },
     {
         method: 'GET',
-        path: '/notifications',
+        path: '/api/notifications',
         handler: handler.getAllNotificationsHandler,
         options: {
             tags: ['api', 'notifications'],
@@ -73,7 +73,7 @@ const routes = (handler) => [
     },
     {
         method: 'GET',
-        path: '/notifications/{id}',
+        path: '/api/notifications/{id}',
         handler: handler.getNotificationByIdHandler,
         options: {
             tags: ['api', 'notifications'],
@@ -113,7 +113,7 @@ const routes = (handler) => [
     },
     {
         method: 'DELETE',
-        path: '/notifications/{id}',
+        path: '/api/notifications/{id}',
         handler: handler.deleteNotificationHandler,
         options: {
             tags: ['api', 'notifications'],

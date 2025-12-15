@@ -10,7 +10,7 @@ const swaggerOptions = {
     },
     schemes: ['http', 'https'],
     host: `${process.env.HOST}:${process.env.PORT}`,
-    documentationPath: '/documentation',
+    documentationPath: '/api/documentation',
     jsonPath: '/swagger.json',
     grouping: 'tags',
     sortEndpoints: 'ordered',

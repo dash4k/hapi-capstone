@@ -3,7 +3,7 @@ const Joi = require('joi');
 const routes = (handler) => [
     {
         method: 'POST',
-        path: '/diagnostics/{machineId}',
+        path: '/api/diagnostics/{machineId}',
         handler: handler.postDiagnosticHandler,
         options: {
             tags: ['api', 'diagnostics'],
@@ -40,7 +40,7 @@ const routes = (handler) => [
     },
         {
         method: 'GET',
-        path: '/diagnostics/{machineId}/latest',
+        path: '/api/diagnostics/{machineId}/latest',
         handler: handler.getLatestDiagnosticsHandler,
         options: {
             tags: ['api', 'diagnostics'],
@@ -101,7 +101,7 @@ const routes = (handler) => [
     },
     {
         method: 'GET',
-        path: '/diagnostics/{machineId}/history',
+        path: '/api/diagnostics/{machineId}/history',
         handler: handler.getDiagnosticHandler,
         options: {
             tags: ['api', 'diagnostics'],
@@ -164,7 +164,7 @@ const routes = (handler) => [
     },
     {
         method: 'GET',
-        path: '/diagnostics',
+        path: '/api/diagnostics',
         handler: handler.getLatestDiagnosticsHandler,
         options: {
             tags: ['api', 'diagnostics'],
@@ -209,7 +209,7 @@ const routes = (handler) => [
     },
     {
         method: 'POST',
-        path: '/diagnostics/bulk',
+        path: '/api/diagnostics/bulk',
         handler: handler.postBulkDiagnosticsHandler,
         options: {
             tags: ['api', 'diagnostics'],
