@@ -12,9 +12,8 @@ class NotificationsHandler {
 
     async postNotificationHandler(request, h) {
         this._validator.validatePostPayload(request.payload);
-        const { userId, machineId } = request.payload;
+        const { machineId } = request.payload;
         
-        await this._usersService.verifyUserExist(userId);
         await this._machinesService.getMachine(machineId);
 
         const notificationId = await this._notificationsService.addNotification(request.payload);
@@ -31,12 +30,9 @@ class NotificationsHandler {
     }
 
     async getAllNotificationsHandler(request, h) {
-        const { id: userId } = request.auth.credentials;
         const { limit } = request.query;
 
-        await this._usersService.verifyUserExist(userId);
-
-        const notifications = await this._notificationsService.getNotifications({ userId, limit });
+        const notifications = await this._notificationsService.getNotifications({ limit });
 
         return h
             .response({

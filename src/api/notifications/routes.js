@@ -12,7 +12,6 @@ const routes = (handler) => [
             notes: 'Creates a new notification for a user about a machine',
             validate: {
                 payload: Joi.object({
-                    userId: Joi.string().required().description('User ID').example('user-001'),
                     machineId: Joi.string().required().description('Machine ID').example('machine-001'),
                     level: Joi.string().required().description('Notification level').example('warning'),
                     message: Joi.string().required().description('Notification message').example('Machine temperature is high'),
@@ -35,7 +34,7 @@ const routes = (handler) => [
                             description: 'Bad request - validation error',
                         },
                         404: {
-                            description: 'User or machine not found',
+                            description: 'Machine not found',
                         },
                     },
                 },
@@ -49,8 +48,8 @@ const routes = (handler) => [
         options: {
             auth: 'pm_jwt',
             tags: ['api', 'notifications'],
-            description: 'Get user notifications',
-            notes: 'Returns notifications for a specific user',
+            description: 'Get all notifications',
+            notes: 'Returns all system notifications',
             validate: {
                 query: Joi.object({
                     limit: Joi.number().integer().min(1).max(100).optional().default(10).description('Number of notifications to return').example(10),

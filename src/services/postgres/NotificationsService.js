@@ -8,21 +8,20 @@ class NotificationsService {
         this._pool = new Pool();
     }
 
-    async addNotification({ userId, machineId, level, message }) {
+    async addNotification({ machineId, level, message }) {
         const time = new Date().toISOString();
 
         const result = await this._pool.query({
             text: `
                 INSERT INTO notifications (
-                    user_id,
                     machine_id,
                     level,
                     message,
                     timestamp
-                ) VALUES ($1, $2, $3, $4, $5)
+                ) VALUES ($1, $2, $3, $4)
                 RETURNING id
             `,
-            values: [userId, machineId, level, message, time],
+            values: [machineId, level, message, time],
         });
 
         if (!result.rows.length) {
@@ -32,30 +31,36 @@ class NotificationsService {
         return result.rows[0].id;
     }
 
-    async getNotifications({ userId, limit=10 }) {
+    async getNotifications({ limit=10 }) {
         const result = await this._pool.query({
             text: `
                 SELECT 
-                    id,
-                    machine_id, 
-                    level,
-                    message, 
-                    timestamp 
-                FROM notifications WHERE user_id = $1 ORDER BY timestamp DESC LIMIT $2
+                    n.id,
+                    n.machine_id,
+                    m.name as machine_name,
+                    n.level,
+                    n.message, 
+                    n.timestamp 
+                FROM notifications n
+                LEFT JOIN machines m ON n.machine_id = m.id
+                ORDER BY n.timestamp DESC 
+                LIMIT $1
             `,
-            values: [userId, limit],
+            values: [limit],
         });
 
         return result.rows.map(
             ({
                 id,
                 machine_id,
+                machine_name,
                 level,
                 message,
                 timestamp
             }) => ({
                 id,
-                machineName: machine_id,
+                machineId: machine_id,
+                machineName: machine_name || `Machine ${machine_id}`,
                 level,
                 message,
                 time: timestamp,
