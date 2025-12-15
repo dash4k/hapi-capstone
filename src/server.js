@@ -81,7 +81,7 @@ const init = async () => {
         host: process.env.HOST,
         routes: {
             cors: {
-                origin: ['*'],
+                origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : ['*'],
                 credentials: true,
             },
         },

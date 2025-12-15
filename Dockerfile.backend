@@ -19,9 +19,6 @@ COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/seeds ./seeds
 COPY --from=builder /app/knexfile.js ./
 COPY --from=builder /app/drop-all-tables.js ./
-COPY --from=builder /app/fastapi_main.py ./
-COPY --from=builder /app/requirements.txt ./
-COPY --from=builder /app/models ./models
 
 EXPOSE 9000
 CMD ["node", "src/server.js"]
