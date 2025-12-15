@@ -8,80 +8,62 @@ class NotificationsService {
         this._pool = new Pool();
     }
 
-    async addNotification({ machineId, level, message }) {
-        const timestamp = new Date().toISOString();
-        
+    async addNotification({ userId, machineId, level, message }) {
+        const time = new Date().toISOString();
+
         const result = await this._pool.query({
-            text: 'INSERT INTO notifications (machine_id, level, message, created_at) VALUES($1, $2, $3, $4) RETURNING id',
-            values: [machineId, level, message, timestamp],
+            text: `
+                INSERT INTO notifications (
+                    user_id,
+                    machine_id,
+                    level,
+                    message,
+                    timestamp
+                ) VALUES ($1, $2, $3, $4, $5)
+                RETURNING id
+            `,
+            values: [userId, machineId, level, message, time],
         });
 
-        if (!result.rows[0].id) {
-            throw new InvariantError('Failed to add notification');
+        if (!result.rows.length) {
+            throw new InvariantError('Failed to add new notification');
         }
 
         return result.rows[0].id;
     }
 
-    async getAllNotifications() {
+    async getNotifications({ userId, limit=10 }) {
         const result = await this._pool.query({
             text: `
                 SELECT 
-                    n.id,
-                    n.machine_id,
-                    m.name as machine_name,
-                    n.level,
-                    n.message,
-                    n.created_at
-                FROM notifications n
-                LEFT JOIN machines m ON n.machine_id = m.id
-                ORDER BY n.created_at DESC
+                    id,
+                    machine_id, 
+                    level,
+                    message, 
+                    timestamp 
+                FROM notifications WHERE user_id = $1 ORDER BY timestamp DESC LIMIT $2
             `,
+            values: [userId, limit],
         });
 
-        return result.rows.map(row => ({
-            id: row.id.toString(),
-            machineId: row.machine_id,
-            machineName: row.machine_name || 'Unknown Machine',
-            level: row.level,
-            message: row.message,
-            time: new Date(row.created_at).toLocaleString(),
-        }));
+        return result.rows.map(
+            ({
+                id,
+                machine_id,
+                level,
+                message,
+                timestamp
+            }) => ({
+                id,
+                machineName: machine_id,
+                level,
+                message,
+                time: timestamp,
+            })
+        );
     }
 
-    async getNotificationById(id) {
-        const result = await this._pool.query({
-            text: `
-                SELECT 
-                    n.id,
-                    n.machine_id,
-                    m.name as machine_name,
-                    n.level,
-                    n.message,
-                    n.created_at
-                FROM notifications n
-                LEFT JOIN machines m ON n.machine_id = m.id
-                WHERE n.id = $1
-            `,
-            values: [id],
-        });
-
-        if (!result.rows.length) {
-            throw new NotFoundError('Notification not found');
-        }
-
-        const row = result.rows[0];
-        return {
-            id: row.id.toString(),
-            machineId: row.machine_id,
-            machineName: row.machine_name || 'Unknown Machine',
-            level: row.level,
-            message: row.message,
-            time: new Date(row.created_at).toLocaleString(),
-        };
-    }
-
-    async deleteNotification(id) {
+    async deleteNotification({ id }) {
         const result = await this._pool.query({
             text: 'DELETE FROM notifications WHERE id = $1 RETURNING id',
             values: [id],

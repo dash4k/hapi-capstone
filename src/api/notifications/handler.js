@@ -1,25 +1,28 @@
 const autoBind = require("auto-bind");
 
 class NotificationsHandler {
-    constructor(service) {
-        this._service = service;
+    constructor(notificationsService, usersService, machinesService, validator) {
+        this._notificationsService = notificationsService;
+        this._usersService = usersService;
+        this._machinesService = machinesService;
+        this._validator = validator;
 
         autoBind(this);
     }
 
     async postNotificationHandler(request, h) {
-        const { machineId, level, message } = request.payload;
+        this._validator.validatePostPayload(request.payload);
+        const { userId, machineId } = request.payload;
+        
+        await this._usersService.verifyUserExist(userId);
+        await this._machinesService.getMachine(machineId);
 
-        const notificationId = await this._service.addNotification({
-            machineId,
-            level,
-            message,
-        });
+        const notificationId = await this._notificationsService.addNotification(request.payload);
 
         return h
             .response({
                 status: 'success',
-                message: 'Notification created successfully',
+                message: 'Notification added successfully',
                 data: {
                     notificationId,
                 },
@@ -27,8 +30,13 @@ class NotificationsHandler {
             .code(201);
     }
 
-    async getAllNotificationsHandler(request, h) {
-        const notifications = await this._service.getAllNotifications();
+    async getNotificationsHandler(request, h) {
+        const { id: userId } = request.auth.credentials;
+        const { limit } = request.query;
+
+        await this._usersService.verifyUserExist(userId);
+
+        const notifications = await this._notificationsService.getNotifications({ userId, limit });
 
         return h
             .response({
@@ -40,28 +48,14 @@ class NotificationsHandler {
             .code(200);
     }
 
-    async getNotificationByIdHandler(request, h) {
-        const { id } = request.params;
-        const notification = await this._service.getNotificationById(id);
-
-        return h
-            .response({
-                status: 'success',
-                data: {
-                    notification,
-                },
-            })
-            .code(200);
-    }
-
     async deleteNotificationHandler(request, h) {
-        const { id } = request.params;
-        await this._service.deleteNotification(id);
+        const { id } = request.auth.credentials;
+        await this._notificationsService.deleteNotification({ id });
 
         return h
             .response({
                 status: 'success',
-                message: 'Notification dismissed successfully',
+                message: 'Notification deleted successfully',
             })
             .code(200);
     }
