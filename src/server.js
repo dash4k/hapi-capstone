@@ -61,7 +61,6 @@ const init = async () => {
     const conversationsService = new ConversationsService();
     const authenticationsService = new AuthenticationsService();
     const usersService = new UsersService();
-    const notificationsService = new NotificationsService();
     
     const agentService = new AgentService(
         diagnosticsService,
