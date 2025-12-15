@@ -3,7 +3,7 @@ const Joi = require('joi');
 const routes = (handler) => [
     {
         method: 'POST',
-        path: '/users',
+        path: '/api/users',
         handler: handler.postUserHandler,
         options: {
             tags: ['api', 'users'],
@@ -40,7 +40,7 @@ const routes = (handler) => [
     },
     {
         method: 'GET',
-        path: '/users',
+        path: '/api/users',
         handler: handler.getAllUsersHandler,
         options: {
             tags: ['api', 'users'],
@@ -72,7 +72,7 @@ const routes = (handler) => [
     },
     {
         method: 'GET',
-        path: '/users/{id}',
+        path: '/api/users/{id}',
         handler: handler.getUserByIdHandler,
         options: {
             tags: ['api', 'users'],
@@ -110,7 +110,7 @@ const routes = (handler) => [
     },
     {
         method: 'DELETE',
-        path: '/users/{id}',
+        path: '/api/users/{id}',
         handler: handler.deleteUserByIdHandler,
         options: {
             tags: ['api', 'users'],

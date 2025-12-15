@@ -3,7 +3,7 @@ const Joi = require('joi');
 const routes = (handler) => [
     {
         method: 'GET',
-        path: '/machines',
+        path: '/api/machines',
         handler: handler.getMachinesHandler,
         options: {
             tags: ['api', 'machines'],
@@ -35,7 +35,7 @@ const routes = (handler) => [
     },
     {
         method: 'GET',
-        path: '/machines/{id}',
+        path: '/api/machines/{id}',
         handler: handler.getMachineByIdHandler,
         options: {
             tags: ['api', 'machines'],
@@ -73,7 +73,7 @@ const routes = (handler) => [
     },
     {
         method: 'POST',
-        path: '/machines',
+        path: '/api/machines',
         handler: handler.postMachineHandler,
         options: {
             tags: ['api', 'machines'],
@@ -108,7 +108,7 @@ const routes = (handler) => [
     },
     {
         method: 'PUT',
-        path: '/machines/{id}',
+        path: '/api/machines/{id}',
         handler: handler.putMachineHandler,
         options: {
             tags: ['api', 'machines'],
@@ -143,7 +143,7 @@ const routes = (handler) => [
     },
     {
         method: 'DELETE',
-        path: '/machines/{id}',
+        path: '/api/machines/{id}',
         handler: handler.deleteMachineByIdHandler,
         options: {
             tags: ['api', 'machines'],

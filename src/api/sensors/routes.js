@@ -3,7 +3,7 @@ const Joi = require('joi');
 const routes = (handler) => [
     {
         method: 'POST',
-        path: '/sensors',
+        path: '/api/sensors',
         handler: handler.postSensorDataHandler,
         options: {
             tags: ['api', 'sensors'],
@@ -42,7 +42,7 @@ const routes = (handler) => [
     },
     {
         method: 'GET',
-        path: '/sensors/{machineId}/history',
+        path: '/api/sensors/{machineId}/history',
         handler: handler.getSensorDataHistoryHandler,
         options: {
             tags: ['api', 'sensors'],
@@ -89,7 +89,7 @@ const routes = (handler) => [
     },
     {
         method: 'GET',
-        path: '/sensors/{machineId}/latest',
+        path: '/api/sensors/{machineId}/latest',
         handler: handler.getLatestSensorDataHandler,
         options: {
             tags: ['api', 'sensors'],

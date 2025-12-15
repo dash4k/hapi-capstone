@@ -20,7 +20,7 @@ const routes = (handler) => [
     },
     {
         method: 'POST',
-        path: '/notifications',
+        path: '/api/notifications',
         handler: handler.postNotificationHandler,
         options: {
             auth: 'pm_jwt',
@@ -61,8 +61,8 @@ const routes = (handler) => [
     },
     {
         method: 'GET',
-        path: '/notifications',
-        handler: handler.getNotificationsHandler,
+        path: '/api/notifications',
+        handler: handler.getAllNotificationsHandler,
         options: {
             auth: 'pm_jwt',
             tags: ['api', 'notifications'],
@@ -102,17 +102,43 @@ const routes = (handler) => [
         },
     },
     {
-        method: 'OPTIONS',
-        path: '/notifications/{id}',
-        handler: (request, h) => {
-            return h
-                .response()
-                .header('Access-Control-Allow-Origin', request.headers.origin || '*')
-                .header('Access-Control-Allow-Methods', 'DELETE, OPTIONS')
-                .header('Access-Control-Allow-Headers', 'authorization, content-type')
-                .header('Access-Control-Allow-Credentials', 'true')
-                .header('Access-Control-Max-Age', '600')
-                .code(200);
+        method: 'GET',
+        path: '/api/notifications/{id}',
+        handler: handler.getNotificationByIdHandler,
+        options: {
+            tags: ['api', 'notifications'],
+            description: 'Get notification by ID',
+            notes: 'Returns notification details by ID',
+            validate: {
+                params: Joi.object({
+                    id: Joi.string().required().description('Notification ID').example('1'),
+                }),
+            },
+            plugins: {
+                'hapi-swagger': {
+                    responses: {
+                        200: {
+                            description: 'Notification retrieved successfully',
+                            schema: Joi.object({
+                                status: Joi.string().example('success'),
+                                data: Joi.object({
+                                    notification: Joi.object({
+                                        id: Joi.string().example('1'),
+                                        machineId: Joi.number().example(1),
+                                        machineName: Joi.string().example('CNC Machine A'),
+                                        level: Joi.string().example('warning'),
+                                        message: Joi.string().example('Temperature exceeding normal range'),
+                                        time: Joi.string().example('12/14/2025, 2:30:00 PM'),
+                                    }),
+                                }),
+                            }),
+                        },
+                        404: {
+                            description: 'Notification not found',
+                        },
+                    },
+                },
+            },
         },
         options: {
             auth: false,
@@ -120,7 +146,7 @@ const routes = (handler) => [
     },
     {
         method: 'DELETE',
-        path: '/notifications/{id}',
+        path: '/api/notifications/{id}',
         handler: handler.deleteNotificationHandler,
         options: {
             auth: 'pm_jwt',
