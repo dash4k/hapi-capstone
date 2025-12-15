@@ -2,23 +2,6 @@ const Joi = require('joi');
 
 const routes = (handler) => [
     {
-        method: 'OPTIONS',
-        path: '/notifications',
-        handler: (request, h) => {
-            return h
-                .response()
-                .header('Access-Control-Allow-Origin', request.headers.origin || '*')
-                .header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-                .header('Access-Control-Allow-Headers', 'authorization, content-type')
-                .header('Access-Control-Allow-Credentials', 'true')
-                .header('Access-Control-Max-Age', '600')
-                .code(200);
-        },
-        options: {
-            auth: false,
-        }
-    },
-    {
         method: 'POST',
         path: '/api/notifications',
         handler: handler.postNotificationHandler,

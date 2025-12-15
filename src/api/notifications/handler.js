@@ -30,7 +30,7 @@ class NotificationsHandler {
             .code(201);
     }
 
-    async getNotificationsHandler(request, h) {
+    async getAllNotificationsHandler(request, h) {
         const { id: userId } = request.auth.credentials;
         const { limit } = request.query;
 
@@ -48,8 +48,23 @@ class NotificationsHandler {
             .code(200);
     }
 
+    async getNotificationByIdHandler(request, h) {
+        const { id } = request.params;
+
+        const notification = await this._notificationsService.getNotificationById({ id });
+
+        return h
+            .response({
+                status: 'success',
+                data: {
+                    notification,
+                },
+            })
+            .code(200);
+    }
+
     async deleteNotificationHandler(request, h) {
-        const { id } = request.auth.credentials;
+        const { id } = request.params;
         await this._notificationsService.deleteNotification({ id });
 
         return h

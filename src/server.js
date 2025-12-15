@@ -26,10 +26,6 @@ const SensorValidator = require('./validator/sensors/index');
 const diagnostics = require('./api/diagnostics');
 const DiagnosticsService = require('./services/postgres/DiagnosticsService');
 
-// Notifications
-const notifications = require('./api/notifications');
-const NotificationsService = require('./services/postgres/NotificationsService');
-
 // Conversations
 const ConversationsService = require('./services/postgres/ConversationsService');
 
@@ -148,12 +144,6 @@ const init = async () => {
                 sensorsService,
                 machinesService,
                 notificationsService,
-            },
-        },
-        {
-            plugin: notifications,
-            options: {
-                service: notificationsService,
             },
         },
         {
