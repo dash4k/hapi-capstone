@@ -174,7 +174,7 @@ const routes = (handler) => [
     },
     {
         method: 'GET',
-        path: '/machines/count',
+        path: '/api/machines/count',
         handler: handler.getCountMachinesHandler,
         options: {
             tags: ['api', 'machines'],
@@ -198,7 +198,7 @@ const routes = (handler) => [
     },
     {
         method: 'GET',
-        path: '/machines/health',
+        path: '/api/machines/health',
         handler: handler.getMachinesHealthHandler,
         options: {
             tags: ['api', 'machines'],
